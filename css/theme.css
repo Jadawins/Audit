@@ -1,0 +1,155 @@
+/* =========================================================
+   THEME.CSS — Design system partagé Audit Tools
+   ========================================================= */
+
+/* VARIABLES */
+:root {
+  --bg:     #0a0c10;
+  --bg2:    #111318;
+  --bg3:    #181b22;
+  --bg4:    #1e222c;
+  --bd:     #242834;
+  --bd2:    #2e3448;
+  --accent: #3b82f6;
+  --acc2:   #60a5fa;
+  --text:   #e2e8f4;
+  --text2:  #6b7494;
+  --text3:  #9aa0b8;
+  --green:  #22c55e;
+  --orange: #f59e0b;
+  --red:    #ef4444;
+  --purple: #a78bfa;
+  --mono:   'IBM Plex Mono', monospace;
+  --sans:   'DM Sans', system-ui, sans-serif;
+}
+
+/* RESET */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+/* ── BOUTONS ─────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  border: none; padding: .55rem 1.25rem; border-radius: 7px;
+  font-size: .82rem; font-weight: 500; cursor: pointer;
+  font-family: var(--sans); transition: all .15s;
+}
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-full { width: 100%; justify-content: center; }
+
+.btn-primary  { background: var(--accent); color: #fff; }
+.btn-primary:hover { opacity: .85; }
+
+.btn-secondary { background: var(--bg4); color: var(--text3); border: 1px solid var(--bd); }
+.btn-secondary:hover { background: var(--bg3); color: var(--text); }
+
+.btn-green { background: rgba(34,197,94,.12); color: var(--green); border: 1px solid rgba(34,197,94,.2); }
+.btn-green:hover { background: rgba(34,197,94,.2); }
+
+/* Alias historique auditms */
+.btn-sm {
+  background: transparent; border: 1px solid var(--bd2); color: var(--text3);
+  padding: .4rem .85rem; border-radius: 6px; font-size: .75rem;
+  cursor: pointer; font-family: var(--sans); transition: all .15s; white-space: nowrap;
+}
+.btn-sm:hover { background: var(--bg4); color: var(--text); }
+.btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-accent:hover { opacity: .85; background: var(--accent); color: #fff; }
+
+/* ── PILLS ───────────────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: .28rem;
+  padding: .18rem .55rem; border-radius: 4px; font-size: .68rem; font-weight: 500;
+}
+.pill-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+.pill-green  { background: rgba(34,197,94,.1);  color: var(--green); }
+.pill-red    { background: rgba(239,68,68,.1);  color: var(--red); }
+.pill-orange { background: rgba(245,158,11,.1); color: var(--orange); }
+.pill-blue   { background: rgba(59,130,246,.1); color: var(--acc2); }
+.pill-purple { background: rgba(167,139,250,.1);color: var(--purple); }
+.pill-gray   { background: var(--bg4);          color: var(--text2); }
+
+/* ── BADGES NAV ──────────────────────────────────────────── */
+.nav-badge {
+  margin-left: auto; background: var(--bg4); border: 1px solid var(--bd);
+  border-radius: 4px; font-size: .65rem; font-family: var(--mono);
+  padding: .1rem .4rem; color: var(--text2);
+}
+.nav-badge.red   { background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.2);  color: var(--red); }
+.nav-badge.green { background: rgba(34,197,94,.1);  border-color: rgba(34,197,94,.2);  color: var(--green); }
+
+/* ── TABLEAUX ────────────────────────────────────────────── */
+.data-panel { background: var(--bg2); border: 1px solid var(--bd); border-radius: 9px; margin-bottom: 1.1rem; overflow: hidden; }
+.dp-head { padding: .85rem 1.1rem; border-bottom: 1px solid var(--bd); display: flex; align-items: center; justify-content: space-between; }
+.dp-title { font-size: .8rem; font-weight: 500; }
+.dp-count { font-size: .7rem; color: var(--text2); font-family: var(--mono); }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-size: .65rem; text-transform: uppercase; letter-spacing: .07em; color: var(--text2); padding: .6rem 1.1rem; text-align: left; border-bottom: 1px solid var(--bd); font-weight: 500; }
+.data-table td { font-size: .8rem; padding: .6rem 1.1rem; border-bottom: 1px solid var(--bd); color: var(--text3); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg3); }
+.mono { font-family: var(--mono); font-size: .72rem; }
+
+/* ── MÉTRIQUES ───────────────────────────────────────────── */
+.metrics { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .85rem; margin-bottom: 1.25rem; }
+.metric { background: var(--bg2); border: 1px solid var(--bd); border-radius: 9px; padding: 1rem 1.1rem; }
+.metric-lbl { font-size: .65rem; color: var(--text2); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .4rem; }
+.metric-val { font-family: var(--mono); font-size: 1.6rem; font-weight: 500; line-height: 1; }
+.metric-sub { font-size: .7rem; color: var(--text2); margin-top: .3rem; }
+.metric.green  .metric-val { color: var(--green); }
+.metric.red    .metric-val { color: var(--red); }
+.metric.orange .metric-val { color: var(--orange); }
+.metric.blue   .metric-val { color: var(--acc2); }
+
+/* ── CHECKS / POINTS D'AUDIT ─────────────────────────────── */
+.check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .85rem; margin-bottom: 1.25rem; }
+.check-card { background: var(--bg2); border: 1px solid var(--bd); border-radius: 9px; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .6rem; }
+.cc-top { display: flex; align-items: center; justify-content: space-between; }
+.cc-name { font-size: .82rem; font-weight: 500; }
+.cc-pts { font-family: var(--mono); font-size: .68rem; color: var(--text2); background: var(--bg4); border: 1px solid var(--bd); padding: .1rem .45rem; border-radius: 4px; }
+.cc-desc { font-size: .75rem; color: var(--text2); line-height: 1.5; }
+.cc-bot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+.cc-val { font-family: var(--mono); font-size: .75rem; color: var(--text2); }
+
+/* ── RECOMMANDATIONS ─────────────────────────────────────── */
+.reco { border: 1px solid var(--bd); border-left: 2px solid var(--orange); border-radius: 8px; padding: .85rem 1.1rem; margin-bottom: .65rem; background: var(--bg2); }
+.reco h4 { font-size: .78rem; font-weight: 500; color: var(--orange); margin-bottom: .3rem; }
+.reco p  { font-size: .75rem; color: var(--text2); line-height: 1.6; }
+.reco.info { border-left-color: var(--acc2); }
+.reco.info h4 { color: var(--acc2); }
+.reco.ok { border-left-color: var(--green); }
+.reco.ok h4 { color: var(--green); }
+
+/* ── BARRE DE FILTRES ────────────────────────────────────── */
+.filter-bar { display: flex; align-items: center; gap: .5rem; padding: .75rem 1.1rem; border-bottom: 1px solid var(--bd); flex-wrap: wrap; }
+.filter-search { background: var(--bg3); border: 1px solid var(--bd); border-radius: 6px; padding: .35rem .75rem; font-size: .78rem; color: var(--text); font-family: var(--sans); outline: none; width: 200px; transition: border-color .12s; }
+.filter-search:focus { border-color: var(--bd2); }
+.filter-search::placeholder { color: var(--text2); }
+.filter-sep { width: 1px; height: 16px; background: var(--bd); margin: 0 .15rem; }
+.ftag { background: var(--bg4); border: 1px solid var(--bd); border-radius: 4px; padding: .25rem .65rem; font-size: .72rem; cursor: pointer; color: var(--text3); transition: all .12s; font-family: var(--sans); user-select: none; }
+.ftag:hover { background: var(--bg3); color: var(--text); }
+.ftag.active { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.3); color: var(--acc2); }
+.filter-count { margin-left: auto; font-family: var(--mono); font-size: .68rem; color: var(--text2); }
+
+/* ── EN-TÊTE DE SECTION ──────────────────────────────────── */
+.sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: .85rem; }
+.sh-title { font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; color: var(--text2); font-weight: 500; }
+
+/* ── CHARGEMENT ──────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(10,12,16,.92); z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: .85rem; }
+.loading-overlay.active { display: flex; }
+.spinner { width: 32px; height: 32px; border: 2px solid var(--bd2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+.loading-text { font-family: var(--mono); font-size: .72rem; color: var(--text2); }
+
+/* ── VIDE & ERREUR ───────────────────────────────────────── */
+.empty { padding: 1.5rem; text-align: center; color: var(--text2); font-size: .78rem; }
+.error-msg { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); border-radius: 6px; padding: .6rem 1rem; font-size: .78rem; color: var(--red); width: 100%; display: none; }
+
+/* ── IMPRESSION ──────────────────────────────────────────── */
+@media print {
+  .sidebar, .topbar, .modal-overlay, .loading-overlay { display: none !important; }
+  .main { margin-left: 0; }
+  .view { display: block !important; }
+  body { background: #fff; color: #000; }
+}

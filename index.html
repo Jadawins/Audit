@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<style>
+body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 2rem; padding: 2rem; }
+.logo { font-family: var(--mono); font-size: .72rem; letter-spacing: .25em; color: var(--text2); }
+.logo span { color: var(--accent); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; width: 100%; max-width: 680px; }
+.card {
+  background: var(--bg2); border: 1px solid var(--bd); border-radius: 12px;
+  padding: 1.75rem; display: flex; flex-direction: column; gap: 1rem;
+  cursor: pointer; transition: border-color .15s, background .15s;
+  text-decoration: none; color: inherit;
+}
+.card:hover { border-color: var(--bd2); background: var(--bg3); }
+.card-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--bd2);
+}
+.card-icon svg { width: 20px; height: 20px; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+.card-ms .card-icon { background: rgba(59,130,246,.1); }
+.card-ms .card-icon svg { stroke: var(--acc2); }
+.card-gpo .card-icon { background: rgba(167,139,250,.1); }
+.card-gpo .card-icon svg { stroke: var(--purple); }
+.card-title { font-size: 1rem; font-weight: 500; }
+.card-desc { font-size: .78rem; color: var(--text2); line-height: 1.6; }
+.card-tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: auto; }
+.tag {
+  background: var(--bg4); border: 1px solid var(--bd); border-radius: 4px;
+  padding: .15rem .55rem; font-size: .65rem; font-family: var(--mono); color: var(--text2);
+}
+.footer { font-size: .65rem; color: var(--text2); font-family: var(--mono); letter-spacing: .05em; }
+</style>
+</head>
+<body>
+
+<div class="logo">AUDIT <span>TOOLS</span> · par William EINSARGUEIX</div>
+
+<div class="cards">
+  <a class="card card-ms" href="auditms.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <div>
+      <div class="card-title">Audit M365</div>
+      <div class="card-desc">Analyse de sécurité d'un tenant Microsoft 365 — MFA, accès conditionnel, utilisateurs, Intune, Secure Score.</div>
+    </div>
+    <div class="card-tags">
+      <span class="tag">Microsoft Graph</span>
+      <span class="tag">MFA</span>
+      <span class="tag">Intune</span>
+      <span class="tag">CA Policies</span>
+    </div>
+  </a>
+
+  <a class="card card-gpo" href="auditgpo.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+    </div>
+    <div>
+      <div class="card-title">Audit GPO · Analyse IA</div>
+      <div class="card-desc">Import d'exports GPO (XML / HTML / ZIP), anonymisation automatique des données sensibles, analyse par IA.</div>
+    </div>
+    <div class="card-tags">
+      <span class="tag">XML / ZIP</span>
+      <span class="tag">Anonymisation</span>
+      <span class="tag">Claude / GPT-4</span>
+      <span class="tag">100% local</span>
+    </div>
+  </a>
+</div>
+
+<div class="footer">audit tools · lecture seule · aucune donnée stockée</div>
+
+</body>
+</html>

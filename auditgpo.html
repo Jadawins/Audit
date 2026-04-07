@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit GPO — Analyse IA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/auditgpo.css">
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-logo">AUDIT <span>GPO</span> · Analyse IA</div>
+  <div class="tb-right">
+    <span style="font-size:.68rem;color:var(--text2)">100% local · anonymisation côté client</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- PANNEAU GAUCHE -->
+  <div class="panel-left">
+
+    <!-- UPLOAD -->
+    <div class="section-head">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <h3>Import des GPO</h3>
+    </div>
+    <div class="section-body" style="border-bottom:1px solid var(--bd)">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave()" ondrop="handleDrop(event)">
+        <input type="file" id="file-input" accept=".xml,.html,.htm,.zip" multiple onchange="handleFiles(this.files)">
+        <div class="dz-icon">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="dz-title">Glisser ou cliquer pour importer</div>
+        <div class="dz-sub">Export GPMC, gpresult, ou dossier ZIP</div>
+        <div class="dz-formats">
+          <span class="fmt-tag">.xml</span>
+          <span class="fmt-tag">.html</span>
+          <span class="fmt-tag">.zip</span>
+        </div>
+      </div>
+      <div class="file-list" id="file-list"></div>
+    </div>
+
+    <!-- ANONYMISATION -->
+    <div class="section-head">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+      <h3>Anonymisation</h3>
+    </div>
+    <div class="section-body" style="border-bottom:1px solid var(--bd)">
+      <div class="anon-options">
+        <label class="anon-opt">
+          <span>Noms de domaine</span>
+          <label class="toggle"><input type="checkbox" id="anon-domain" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </label>
+        <label class="anon-opt">
+          <span>Noms de machines</span>
+          <label class="toggle"><input type="checkbox" id="anon-computers" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </label>
+        <label class="anon-opt">
+          <span>Noms d'utilisateurs / UPN</span>
+          <label class="toggle"><input type="checkbox" id="anon-users" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </label>
+        <label class="anon-opt">
+          <span>Adresses IP</span>
+          <label class="toggle"><input type="checkbox" id="anon-ips" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </label>
+        <label class="anon-opt">
+          <span>SIDs Windows</span>
+          <label class="toggle"><input type="checkbox" id="anon-sids" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </label>
+        <label class="anon-opt">
+          <span>Distinguished Names (DN)</span>
+          <label class="toggle"><input type="checkbox" id="anon-dns" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </label>
+        <label class="anon-opt">
+          <span>GUIDs</span>
+          <label class="toggle"><input type="checkbox" id="anon-guids" checked><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        </label>
+      </div>
+    </div>
+
+    <!-- CONFIG IA -->
+    <div class="section-head">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+      <h3>Configuration IA</h3>
+    </div>
+    <div class="section-body">
+      <div class="ai-config">
+        <div>
+          <div class="field-lbl">Endpoint</div>
+          <select class="field-input" id="ai-provider" onchange="updateProvider()">
+            <option value="claude">Claude (Anthropic)</option>
+            <option value="openai">OpenAI (GPT-4)</option>
+            <option value="custom">Endpoint personnalisé</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-lbl">Clé API</div>
+          <input class="field-input" id="ai-key" type="password" placeholder="sk-ant-..." autocomplete="off">
+        </div>
+        <div id="ai-model-wrap">
+          <div class="field-lbl">Modèle</div>
+          <select class="field-input" id="ai-model">
+            <option value="claude-opus-4-6">Claude Opus 4.6</option>
+            <option value="claude-sonnet-4-6" selected>Claude Sonnet 4.6</option>
+            <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+          </select>
+        </div>
+        <div id="ai-url-wrap" style="display:none">
+          <div class="field-lbl">URL endpoint</div>
+          <input class="field-input" id="ai-url" placeholder="https://..." type="url">
+        </div>
+        <div>
+          <div class="field-lbl">Langue du rapport</div>
+          <select class="field-input" id="ai-lang">
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <p style="font-size:.68rem;color:var(--text2);line-height:1.5">La clé API n'est jamais stockée. Elle est utilisée uniquement pour la requête en cours (sessionStorage).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANNEAU DROIT -->
+  <div class="panel-right" id="right-panel">
+
+    <!-- ÉTAT VIDE -->
+    <div class="step-empty" id="step-empty">
+      <div class="step-empty-icon">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </div>
+      <h2>Importez vos fichiers GPO</h2>
+      <p>Glissez un export GPMC (.xml), un rapport gpresult (.html), ou un dossier compressé (.zip) dans le panneau de gauche pour commencer l'analyse.</p>
+      <div style="display:flex;flex-direction:column;gap:.5rem;align-items:flex-start;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:1rem 1.25rem;font-size:.75rem;color:var(--text2);line-height:1.7">
+        <strong style="color:var(--text3);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em">Comment exporter vos GPO ?</strong>
+        <span><span style="color:var(--acc2);font-family:var(--mono)">gpresult /h C:\gpo.html</span> — rapport HTML local</span>
+        <span>GPMC → Sauvegarder une GPO → dossier ZIP</span>
+        <span><span style="color:var(--acc2);font-family:var(--mono)">Get-GPOReport -All -ReportType Xml</span> — PowerShell</span>
+      </div>
+    </div>
+
+    <!-- PRÉVISUALISATION (masqué par défaut) -->
+    <div id="step-preview" style="display:none">
+      <div class="preview-header">
+        <div>
+          <div class="preview-title">Données anonymisées</div>
+          <div class="preview-meta" id="preview-meta"></div>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-secondary" onclick="downloadAnonymized()">⬇ Télécharger</button>
+          <button class="btn btn-primary" id="btn-analyze" onclick="analyzeWithAI()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+            Analyser avec l'IA
+          </button>
+        </div>
+      </div>
+
+      <!-- STATS ANONYMISATION -->
+      <div class="anon-stats" id="anon-stats"></div>
+
+      <!-- BLOCS GPO -->
+      <div id="preview-blocks"></div>
+    </div>
+
+    <!-- RÉSULTATS IA (masqué par défaut) -->
+    <div id="step-results" style="display:none">
+      <div class="preview-header">
+        <div>
+          <div class="preview-title">Rapport IA</div>
+          <div class="preview-meta" id="results-meta"></div>
+        </div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-secondary" onclick="showPreview()">← Retour</button>
+          <button class="btn btn-secondary" onclick="downloadReport()">⬇ Exporter</button>
+        </div>
+      </div>
+      <div id="results-content"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="js/utils.js"></script>
+<script src="js/anonymizer.js"></script>
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let _files = [];         // { name, type, content (string) }
+let _anonymized = [];    // { name, original, anonymized, stats }
+let _aiReport = "";
+
+// ── DRAG & DROP ────────────────────────────────────────────────────────────────
+function handleDragOver(e) { e.preventDefault(); document.getElementById("drop-zone").classList.add("drag"); }
+function handleDragLeave() { document.getElementById("drop-zone").classList.remove("drag"); }
+function handleDrop(e) { e.preventDefault(); handleDragLeave(); handleFiles(e.dataTransfer.files); }
+
+async function handleFiles(fileList) {
+  for (const f of fileList) {
+    const ext = f.name.split(".").pop().toLowerCase();
+    if (ext === "zip") {
+      await readZip(f);
+    } else if (["xml","html","htm"].includes(ext)) {
+      const text = await readText(f);
+      addFile(f.name, ext === "htm" ? "html" : ext, text);
+    }
+  }
+  renderFileList();
+  if (_files.length > 0) processFiles();
+}
+
+function readText(f) {
+  return new Promise(res => { const r = new FileReader(); r.onload = e => res(e.target.result); r.readAsText(f, "utf-8"); });
+}
+
+async function readZip(f) {
+  try {
+    const buf = await f.arrayBuffer();
+    const zip = await JSZip.loadAsync(buf);
+    for (const [path, entry] of Object.entries(zip.files)) {
+      if (entry.dir) continue;
+      const ext = path.split(".").pop().toLowerCase();
+      if (!["xml","html","htm"].includes(ext)) continue;
+      const text = await entry.async("text");
+      addFile(path.split("/").pop() || path, ext === "htm" ? "html" : ext, text);
+    }
+  } catch(e) { toast("Erreur lecture ZIP : " + e.message, "err"); }
+}
+
+function addFile(name, type, content) {
+  if (_files.find(f => f.name === name && f.content === content)) return;
+  _files.push({ name, type, content });
+}
+
+function removeFile(idx) {
+  _files.splice(idx, 1);
+  renderFileList();
+  if (_files.length === 0) { showEmpty(); return; }
+  processFiles();
+}
+
+function renderFileList() {
+  const el = document.getElementById("file-list");
+  el.innerHTML = _files.map((f, i) => `
+    <div class="file-item">
+      <div class="fi-icon fi-${f.type}">${f.type.toUpperCase()}</div>
+      <div class="fi-info">
+        <div class="fi-name">${f.name}</div>
+        <div class="fi-size">${formatBytes(f.content.length)}</div>
+      </div>
+      <button class="fi-del" onclick="removeFile(${i})">✕</button>
+    </div>
+  `).join("");
+}
+
+// ── TRAITEMENT FICHIERS ────────────────────────────────────────────────────────
+function processFiles() {
+  resetAnonState();
+  _anonymized = [];
+  const totalStats = {};
+
+  const opts = {
+    sids:      document.getElementById("anon-sids").checked,
+    guids:     document.getElementById("anon-guids").checked,
+    dns:       document.getElementById("anon-dns").checked,
+    users:     document.getElementById("anon-users").checked,
+    ips:       document.getElementById("anon-ips").checked,
+    domain:    document.getElementById("anon-domain").checked,
+    computers: document.getElementById("anon-computers").checked,
+  };
+  for (const f of _files) {
+    const { out, stats } = anonymize(f.content, opts);
+    _anonymized.push({ name: f.name, type: f.type, original: f.content, anonymized: out });
+    for (const [k, v] of Object.entries(stats)) totalStats[k] = (totalStats[k]||0)+v;
+  }
+
+  renderPreview(totalStats);
+}
+
+function renderPreview(stats) {
+  document.getElementById("step-empty").style.display = "none";
+  document.getElementById("step-results").style.display = "none";
+  document.getElementById("step-preview").style.display = "block";
+
+  // Meta
+  const totalChars = _anonymized.reduce((a, f) => a + f.anonymized.length, 0);
+  document.getElementById("preview-meta").textContent = `${_files.length} fichier(s) · ${formatBytes(totalChars)} après anonymisation`;
+
+  // Stats anonymisation
+  const statKeys = Object.entries(stats).filter(([,v]) => v > 0);
+  const typeLabels = { SID:"SIDs", GUID:"GUIDs", DN:"DN LDAP", UPN:"Emails/UPN", IP:"Adresses IP", DOMAIN:"Domaines", USER:"Utilisateurs", PC:"Machines" };
+  document.getElementById("anon-stats").innerHTML = statKeys.map(([k,v]) =>
+    `<div class="astat"><div class="astat-val">${v}</div><div class="astat-lbl">${typeLabels[k]||k}</div></div>`
+  ).join("") + (statKeys.length === 0 ? `<div class="astat"><div class="astat-val" style="color:var(--green)">0</div><div class="astat-lbl">Éléments sensibles</div></div>` : "");
+
+  // Blocs prévisualisation
+  document.getElementById("preview-blocks").innerHTML = _anonymized.map(f => {
+    // Surligne les tokens anonymisés
+    const highlighted = f.anonymized
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/\[(SID|GUID|DN|UPN|IP|DOMAIN|USER|PC)-\d+\]/g, m => `<span class="highlight-anon">${m}</span>`);
+    const preview = highlighted.length > 4000 ? highlighted.substring(0, 4000) + "\n\n... (tronqué pour la prévisualisation)" : highlighted;
+    return `<div class="preview-block">
+      <div class="pb-head">
+        <span class="pb-name">${f.name}</span>
+        <span class="pb-badge pill pill-blue">${f.type.toUpperCase()} · ${formatBytes(f.anonymized.length)}</span>
+      </div>
+      <div class="pb-content">${preview}</div>
+    </div>`;
+  }).join("");
+}
+
+// ── ANALYSE IA ─────────────────────────────────────────────────────────────────
+async function analyzeWithAI() {
+  const apiKey = document.getElementById("ai-key").value.trim();
+  const provider = document.getElementById("ai-provider").value;
+  const lang = document.getElementById("ai-lang").value;
+
+  if (!apiKey) { toast("Clé API requise dans le panneau de configuration.", "err"); return; }
+  if (_anonymized.length === 0) { toast("Aucun fichier à analyser.", "err"); return; }
+
+  // Construit le contenu à analyser
+  let content = _anonymized.map(f => `=== FICHIER: ${f.name} ===\n${f.anonymized}`).join("\n\n");
+  // Tronque si trop long (limite ~80k chars pour contexte)
+  if (content.length > 80000) {
+    content = content.substring(0, 80000) + "\n\n[... TRONQUÉ ...]";
+    toast("Contenu tronqué à 80 000 caractères pour l'envoi.", "ok");
+  }
+
+  const instruction = lang === "fr"
+    ? `Tu es un expert en sécurité Active Directory et stratégies de groupe Windows (GPO). Analyse les données de GPO suivantes (anonymisées) et fournis un rapport détaillé en français incluant :
+1. **Résumé exécutif** — vue d'ensemble de la configuration
+2. **Paramètres de sécurité identifiés** — liste et évaluation (mots de passe, verrouillage, Kerberos, audit, pare-feu, etc.)
+3. **Risques et failles** — ce qui est manquant ou mal configuré, avec niveau de criticité (critique / élevé / moyen / faible)
+4. **Recommandations** — actions correctives priorisées avec les valeurs recommandées
+5. **Points positifs** — bonnes pratiques déjà en place
+Utilise Markdown pour formater ta réponse. Sois précis et opérationnel.`
+    : `You are an expert in Active Directory security and Windows Group Policy (GPO). Analyze the following GPO data (anonymized) and provide a detailed report including:
+1. **Executive Summary** — overall configuration overview
+2. **Security settings identified** — list and evaluation (passwords, lockout, Kerberos, audit, firewall, etc.)
+3. **Risks and vulnerabilities** — missing or misconfigured settings with severity level (critical / high / medium / low)
+4. **Recommendations** — prioritized corrective actions with recommended values
+5. **Positive points** — good practices already in place
+Use Markdown to format your response. Be precise and actionable.`;
+
+  // Affiche le chargement
+  document.getElementById("step-preview").style.display = "none";
+  document.getElementById("step-results").style.display = "block";
+  document.getElementById("results-meta").textContent = "Analyse en cours...";
+  document.getElementById("results-content").innerHTML = `
+    <div class="loading-block">
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="load-txt">Envoi des données anonymisées à l'IA...</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar"></div></div>
+    </div>`;
+
+  // Simule progression
+  let prog = 0;
+  const progInterval = setInterval(() => { prog = Math.min(90, prog + Math.random()*15); document.getElementById("prog-bar").style.width = prog + "%"; }, 800);
+
+  try {
+    let rawResponse = "";
+
+    if (provider === "claude") {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          model: document.getElementById("ai-model").value,
+          max_tokens: 4096,
+          messages: [{ role: "user", content: instruction + "\n\n---\n\n" + content }]
+        })
+      });
+      if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || resp.status); }
+      const data = await resp.json();
+      rawResponse = data.content?.[0]?.text || "";
+    } else if (provider === "openai") {
+      const resp = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: instruction },
+            { role: "user", content: content }
+          ]
+        })
+      });
+      if (!resp.ok) { const e = await resp.json(); throw new Error(e.error?.message || resp.status); }
+      const data = await resp.json();
+      rawResponse = data.choices?.[0]?.message?.content || "";
+    } else {
+      // Endpoint personnalisé (proxy)
+      const url = document.getElementById("ai-url").value.trim();
+      if (!url) throw new Error("URL endpoint non configurée.");
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction, content })
+      });
+      if (!resp.ok) throw new Error("Erreur " + resp.status);
+      const data = await resp.json();
+      rawResponse = data.content || data.text || data.response || JSON.stringify(data);
+    }
+
+    clearInterval(progInterval);
+    document.getElementById("prog-bar").style.width = "100%";
+    _aiReport = rawResponse;
+    renderResults(rawResponse);
+    toast("Analyse terminée.", "ok");
+
+  } catch(e) {
+    clearInterval(progInterval);
+    document.getElementById("results-content").innerHTML = `
+      <div class="loading-block" style="border-left:2px solid var(--red)">
+        <div style="font-size:.85rem;font-weight:500;color:var(--red)">Erreur lors de l'analyse</div>
+        <div class="loading-text">${e.message}</div>
+        <button class="btn btn-secondary" onclick="showPreview()" style="margin-top:.5rem">← Retour</button>
+      </div>`;
+    document.getElementById("results-meta").textContent = "Échec";
+  }
+}
+
+function renderResults(raw) {
+  document.getElementById("results-meta").textContent = new Date().toLocaleString("fr-FR");
+  document.getElementById("results-content").innerHTML = `
+    <div class="ai-result">
+      <div class="ai-result-head">
+        <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+        <h3>Analyse des stratégies de groupe</h3>
+      </div>
+      <div class="ai-result-body">${renderMarkdown(raw)}</div>
+    </div>`;
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────────
+function showEmpty() {
+  document.getElementById("step-empty").style.display = "flex";
+  document.getElementById("step-preview").style.display = "none";
+  document.getElementById("step-results").style.display = "none";
+}
+function showPreview() {
+  document.getElementById("step-empty").style.display = "none";
+  document.getElementById("step-preview").style.display = "block";
+  document.getElementById("step-results").style.display = "none";
+}
+
+// ── PROVIDER ──────────────────────────────────────────────────────────────────
+function updateProvider() {
+  const p = document.getElementById("ai-provider").value;
+  document.getElementById("ai-model-wrap").style.display = p === "claude" ? "" : "none";
+  document.getElementById("ai-url-wrap").style.display = p === "custom" ? "" : "none";
+  if (p === "openai") { document.getElementById("ai-key").placeholder = "sk-..."; }
+  else if (p === "claude") { document.getElementById("ai-key").placeholder = "sk-ant-..."; }
+  else { document.getElementById("ai-key").placeholder = "Bearer token ou clé..."; }
+}
+
+// ── TÉLÉCHARGEMENTS ───────────────────────────────────────────────────────────
+function downloadAnonymized() {
+  if (_anonymized.length === 0) return;
+  if (_anonymized.length === 1) {
+    download(_anonymized[0].name.replace(/\./,"_anon."), _anonymized[0].anonymized, "text/plain");
+  } else {
+    // Crée un fichier texte concatené
+    const content = _anonymized.map(f => `=== ${f.name} ===\n${f.anonymized}`).join("\n\n");
+    download("gpo_anonymises.txt", content, "text/plain");
+  }
+}
+function downloadReport() {
+  if (!_aiReport) return;
+  download("rapport_gpo_ia.md", _aiReport, "text/markdown");
+}
+function download(name, content, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; a.click();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+
+// Reprocess quand options anonymisation changent
+document.querySelectorAll("[id^='anon-']").forEach(el => {
+  el.addEventListener("change", () => { if (_files.length > 0) processFiles(); });
+});
+</script>
+</body>
+</html>
