@@ -394,7 +394,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 
 <script>
 const CLIENT_ID = "db07380a-3195-4dda-9633-850e114c4fbd";
-const msalConfig = { auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/common", redirectUri: "http://localhost:5500/audit.html" }, cache: { cacheLocation: "sessionStorage" } };
+const msalConfig = { auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/common", redirectUri: "https://auditms.fr/auditms.html" }, cache: { cacheLocation: "sessionStorage" } };
 const scopes = ["User.Read.All","Policy.Read.All","Directory.Read.All","AuditLog.Read.All","Organization.Read.All","RoleManagement.Read.All","UserAuthenticationMethod.Read.All","SecurityEvents.Read.All","DeviceManagementManagedDevices.Read.All"];
 
 let _msal = null, _token = null, _data = {}, _charts = {};
