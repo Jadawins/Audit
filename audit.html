@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit M365</title>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.0/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:     #0a0c10;
+  --bg2:    #111318;
+  --bg3:    #181b22;
+  --bg4:    #1e222c;
+  --bd:     #242834;
+  --bd2:    #2e3448;
+  --accent: #3b82f6;
+  --acc2:   #60a5fa;
+  --text:   #e2e8f4;
+  --text2:  #6b7494;
+  --text3:  #9aa0b8;
+  --green:  #22c55e;
+  --orange: #f59e0b;
+  --red:    #ef4444;
+  --mono:   'IBM Plex Mono', monospace;
+  --sans:   'DM Sans', system-ui, sans-serif;
+  --sw:     220px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+
+/* LOGIN */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:1.5rem;padding:2rem;text-align:center}
+.login-logo{font-family:var(--mono);font-size:.78rem;letter-spacing:.2em;color:var(--text2)}.login-logo span{color:var(--accent)}
+.login-box{background:var(--bg2);border:1px solid var(--bd2);border-radius:12px;padding:2rem;display:flex;flex-direction:column;align-items:center;gap:1.25rem;width:100%;max-width:400px}
+.lock-icon{width:44px;height:44px;background:var(--bg4);border:1px solid var(--bd2);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.lock-icon svg{width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round}
+.login-box h2{font-size:1.2rem;font-weight:500}
+.login-box p{font-size:.8rem;color:var(--text2);line-height:1.6;text-align:center}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:.65rem 1.5rem;border-radius:7px;font-size:.85rem;font-weight:500;cursor:pointer;font-family:var(--sans);transition:opacity .2s;width:100%}
+.btn-primary:hover{opacity:.85}
+.btn-sm{background:transparent;border:1px solid var(--bd2);color:var(--text3);padding:.4rem .85rem;border-radius:6px;font-size:.75rem;cursor:pointer;font-family:var(--sans);transition:all .15s;white-space:nowrap}
+.btn-sm:hover{background:var(--bg4);color:var(--text)}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-accent:hover{opacity:.85;background:var(--accent);color:#fff}
+.error-msg{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:6px;padding:.6rem 1rem;font-size:.78rem;color:var(--red);width:100%;display:none}
+
+/* APP */
+#app{display:none;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:var(--sw);background:var(--bg2);border-right:1px solid var(--bd);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;padding:1.25rem 0;z-index:10}
+.sb-logo{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;padding:0 1.1rem 1.25rem;border-bottom:1px solid var(--bd);color:var(--text2);margin-bottom:.75rem}.sb-logo span{color:var(--accent)}
+.sb-tenant{padding:0 1.1rem .75rem;border-bottom:1px solid var(--bd);margin-bottom:.75rem}
+.sb-tenant-lbl{font-size:.62rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text2);margin-bottom:.25rem}
+.sb-tenant-name{font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-tenant-dom{font-size:.7rem;color:var(--text2);font-family:var(--mono)}
+.nav-lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);padding:.4rem .6rem .25rem 1.1rem}
+.nav-item{display:flex;align-items:center;gap:.6rem;padding:.45rem .75rem;margin:0 .4rem;border-radius:6px;font-size:.82rem;color:var(--text3);cursor:pointer;transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--bg4);color:var(--text)}
+.nav-item.active{background:rgba(59,130,246,.1);color:var(--acc2)}
+.nav-item svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--bg4);border:1px solid var(--bd);border-radius:4px;font-size:.65rem;font-family:var(--mono);padding:.1rem .4rem;color:var(--text2)}
+.nav-badge.red{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.2);color:var(--red)}
+.sb-footer{margin-top:auto;padding:.75rem 1.1rem 0;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:.4rem}
+.sb-user{font-size:.7rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* MAIN */
+.main{margin-left:var(--sw);display:flex;flex-direction:column;min-height:100vh}
+.topbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:5}
+.topbar-title{font-size:.85rem;font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:.75rem}
+.content{padding:1.5rem;flex:1}
+
+/* VIEWS */
+.view{display:none}.view.active{display:block}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem;margin-bottom:1.25rem}
+.metric{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:1rem 1.1rem}
+.metric-lbl{font-size:.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.4rem}
+.metric-val{font-family:var(--mono);font-size:1.6rem;font-weight:500;line-height:1}
+.metric-sub{font-size:.7rem;color:var(--text2);margin-top:.3rem}
+.metric.green .metric-val{color:var(--green)}.metric.red .metric-val{color:var(--red)}.metric.orange .metric-val{color:var(--orange)}.metric.blue .metric-val{color:var(--acc2)}
+
+/* HOME TOP */
+.home-top{display:grid;grid-template-columns:260px 1fr;gap:1.1rem;margin-bottom:1.25rem;align-items:start}
+.score-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:.85rem}
+.score-ring{position:relative;width:120px;height:120px}
+.score-ring svg{transform:rotate(-90deg)}
+.score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-family:var(--mono);font-size:2.2rem;font-weight:500;line-height:1}
+.score-denom{font-size:.65rem;color:var(--text2);font-family:var(--mono)}
+.score-label{font-size:.75rem;font-weight:500;padding:.25rem .8rem;border-radius:99px}
+.score-desc{font-size:.75rem;color:var(--text2);text-align:center;line-height:1.5;max-width:180px}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.25rem}
+.chart-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:1.1rem}
+.chart-title{font-size:.65rem;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.85rem}
+.chart-wrap{position:relative;height:170px}
+
+/* CHECKS */
+.check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.85rem;margin-bottom:1.25rem}
+.check-card{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.6rem}
+.cc-top{display:flex;align-items:center;justify-content:space-between}
+.cc-name{font-size:.82rem;font-weight:500}
+.cc-pts{font-family:var(--mono);font-size:.68rem;color:var(--text2);background:var(--bg4);border:1px solid var(--bd);padding:.1rem .45rem;border-radius:4px}
+.cc-desc{font-size:.75rem;color:var(--text2);line-height:1.5}
+.cc-bot{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.cc-val{font-family:var(--mono);font-size:.75rem;color:var(--text2)}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;gap:.28rem;padding:.18rem .55rem;border-radius:4px;font-size:.68rem;font-weight:500}
+.pill-green{background:rgba(34,197,94,.1);color:var(--green)}
+.pill-red{background:rgba(239,68,68,.1);color:var(--red)}
+.pill-orange{background:rgba(245,158,11,.1);color:var(--orange)}
+.pill-blue{background:rgba(59,130,246,.1);color:var(--acc2)}
+.pill-gray{background:var(--bg4);color:var(--text2)}
+.pill-dot{width:4px;height:4px;border-radius:50%;background:currentColor}
+
+/* DATA TABLE */
+.data-panel{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;margin-bottom:1.1rem;overflow:hidden}
+.dp-head{padding:.85rem 1.1rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.dp-title{font-size:.8rem;font-weight:500}
+.dp-count{font-size:.7rem;color:var(--text2);font-family:var(--mono)}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:.65rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);padding:.6rem 1.1rem;text-align:left;border-bottom:1px solid var(--bd);font-weight:500}
+.data-table td{font-size:.8rem;padding:.6rem 1.1rem;border-bottom:1px solid var(--bd);color:var(--text3)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--bg3)}
+.mono{font-family:var(--mono);font-size:.72rem}
+
+/* INTUNE PLATFORMS */
+.platform-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.85rem;margin-bottom:1.1rem}
+.platform-card{background:var(--bg2);border:1px solid var(--bd);border-radius:9px;padding:1rem 1.1rem;cursor:pointer;transition:border-color .12s}
+.platform-card:hover{border-color:var(--bd2)}
+.pc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
+.pc-os{font-size:.82rem;font-weight:500}
+.pc-total{font-family:var(--mono);font-size:1.5rem;font-weight:500;color:var(--acc2)}
+.pc-stats{display:flex;flex-direction:column;gap:.3rem}
+.pc-stat{display:flex;justify-content:space-between;font-size:.75rem}
+.pc-stat span:first-child{color:var(--text2)}
+.pc-stat span:last-child{font-family:var(--mono);font-weight:500}
+
+/* RECOS */
+.reco{border:1px solid var(--bd);border-left:2px solid var(--orange);border-radius:8px;padding:.85rem 1.1rem;margin-bottom:.65rem;background:var(--bg2)}
+.reco h4{font-size:.78rem;font-weight:500;color:var(--orange);margin-bottom:.3rem}
+.reco p{font-size:.75rem;color:var(--text2);line-height:1.6}
+.reco.info{border-left-color:var(--acc2)}.reco.info h4{color:var(--acc2)}
+
+/* SECTION HEAD */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
+.sh-title{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text2);font-weight:500}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;padding:1.5rem}
+.modal-overlay.active{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--bd2);border-radius:11px;width:100%;max-width:600px;max-height:78vh;display:flex;flex-direction:column}
+.modal-head{padding:1rem 1.25rem;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-head h3{font-size:.85rem;font-weight:500}
+.modal-hr{display:flex;align-items:center;gap:.65rem}
+.modal-cnt{font-family:var(--mono);font-size:.7rem;color:var(--text2)}
+.modal-x{background:none;border:none;color:var(--text2);font-size:1.05rem;cursor:pointer;padding:.15rem}
+.modal-x:hover{color:var(--text)}
+.modal-body{overflow-y:auto;flex:1}
+.modal-row{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.25rem;border-bottom:1px solid var(--bd);gap:1rem}
+.modal-row:last-child{border-bottom:none}
+.modal-row:hover{background:var(--bg3)}
+.mr-main{display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.mr-name{font-size:.8rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-sub{font-size:.7rem;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-meta{font-size:.68rem;color:var(--text2);white-space:nowrap;flex-shrink:0}
+
+/* LOADING */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(10,12,16,.92);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:.85rem}
+.loading-overlay.active{display:flex}
+.spinner{width:32px;height:32px;border:2px solid var(--bd2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:var(--mono);font-size:.72rem;color:var(--text2)}
+.empty{padding:1.5rem;text-align:center;color:var(--text2);font-size:.78rem}
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:.5rem;padding:.75rem 1.1rem;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.filter-search{background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:.35rem .75rem;font-size:.78rem;color:var(--text);font-family:var(--sans);outline:none;width:200px;transition:border-color .12s}
+.filter-search:focus{border-color:var(--bd2)}
+.filter-search::placeholder{color:var(--text2)}
+.filter-sep{width:1px;height:16px;background:var(--bd);margin:0 .15rem}
+.ftag{background:var(--bg4);border:1px solid var(--bd);border-radius:4px;padding:.25rem .65rem;font-size:.72rem;cursor:pointer;color:var(--text3);transition:all .12s;font-family:var(--sans)}
+.ftag:hover{background:var(--bg3);color:var(--text)}
+.ftag.active{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:var(--acc2)}
+.filter-count{margin-left:auto;font-family:var(--mono);font-size:.68rem;color:var(--text2)}
+
+@media print{.sidebar,.topbar,.modal-overlay,.loading-overlay{display:none!important}.main{margin-left:0}.view{display:block!important}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Initialisation...</div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title"></h3>
+      <div class="modal-hr">
+        <span class="modal-cnt" id="modal-cnt"></span>
+        <button class="modal-x" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">AUDIT M365</div>
+  <div class="login-box">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <h2>Audit de sécurité M365</h2>
+    <p>Connectez-vous avec un compte administrateur du tenant à auditer. Aucun identifiant ne transite par cet outil.</p>
+    <div class="error-msg" id="error-msg"></div>
+    <button class="btn-primary" onclick="login()">Se connecter avec Microsoft</button>
+    <span style="font-size:.68rem;color:var(--text2)">Lecture seule · Microsoft Graph API</span>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="sidebar">
+    <div class="sb-logo">AUDIT M365</div>
+    <div class="sb-tenant">
+      <div class="sb-tenant-lbl">Tenant audité</div>
+      <div class="sb-tenant-name" id="nav-tenant-name">—</div>
+      <div class="sb-tenant-dom" id="nav-tenant-dom">—</div>
+    </div>
+    <div class="nav-lbl">Analyse</div>
+    <div class="nav-item active" onclick="showView('home')" id="nav-home">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Vue d'ensemble
+    </div>
+    <div class="nav-item" onclick="showView('users')" id="nav-users">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Utilisateurs
+      <span class="nav-badge red" id="nb-users">—</span>
+    </div>
+    <div class="nav-item" onclick="showView('policies')" id="nav-policies">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Stratégies
+    </div>
+    <div class="nav-item" onclick="showView('intune')" id="nav-intune">
+      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      Intune
+      <span class="nav-badge" id="nb-intune">—</span>
+    </div>
+    <div class="sb-footer">
+      <div class="sb-user" id="nav-user">—</div>
+      <div style="font-size:.6rem;color:var(--text2);margin-bottom:.25rem">par William EINSARGUEIX</div>
+      <div style="display:flex;gap:.4rem">
+        <button class="btn-sm" onclick="relancer()" style="flex:1">↺ Réanalyser</button>
+        <button class="btn-sm" onclick="logout()">Quitter</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-title">Vue d'ensemble</span>
+      <div class="topbar-right">
+        <span style="font-size:.7rem;color:var(--text2);font-family:var(--mono)" id="topbar-date"></span>
+        <button class="btn-sm btn-accent" onclick="window.print()">⬇ PDF</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- VUE D'ENSEMBLE -->
+      <div class="view active" id="view-home">
+        <div class="home-top">
+          <div class="score-panel">
+            <div class="score-ring">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="#1e222c" stroke-width="9"/>
+                <circle id="score-circle" cx="60" cy="60" r="50" fill="none" stroke="#3b82f6" stroke-width="9"
+                  stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"
+                  style="transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1),stroke .5s"/>
+              </svg>
+              <div class="score-center">
+                <span class="score-num" id="score-num">—</span>
+                <span class="score-denom">/100</span>
+              </div>
+            </div>
+            <span class="score-label" id="score-label">—</span>
+            <p class="score-desc" id="score-desc">Analyse en cours...</p>
+          </div>
+          <div class="metrics" style="margin-bottom:0;align-content:start" id="home-metrics"></div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-panel">
+            <div class="chart-title">MFA — Répartition</div>
+            <div class="chart-wrap"><canvas id="chart-mfa"></canvas></div>
+          </div>
+          <div class="chart-panel">
+            <div class="chart-title">Conformité Intune</div>
+            <div class="chart-wrap" id="chart-intune-wrap"><canvas id="chart-intune"></canvas></div>
+          </div>
+        </div>
+
+        <div class="sh"><span class="sh-title">Points d'audit</span></div>
+        <div class="check-grid" id="home-checks"></div>
+        <div class="sh"><span class="sh-title">Recommandations</span></div>
+        <div id="home-recos"></div>
+      </div>
+
+      <!-- UTILISATEURS -->
+      <div class="view" id="view-users">
+        <div class="metrics" id="users-metrics"></div>
+
+        <div class="data-panel">
+          <div class="dp-head"><span class="dp-title">Tous les utilisateurs licenciés actifs</span><span class="dp-count" id="cnt-all-users">—</span></div>
+          <div class="filter-bar">
+            <input class="filter-search" id="f-users-search" placeholder="Rechercher nom / UPN..." oninput="filterUsers()">
+            <div class="filter-sep"></div>
+            <span class="ftag active" data-group="utype" onclick="setUserFilter('all',this)">Tous</span>
+            <span class="ftag" data-group="utype" onclick="setUserFilter('nomfa',this)">Sans MFA</span>
+            <span class="ftag" data-group="utype" onclick="setUserFilter('inactive',this)">Inactifs &gt;90j</span>
+            <span class="ftag" data-group="utype" onclick="setUserFilter('neverlogin',this)">Jamais connectés</span>
+            <div class="filter-sep"></div>
+            <span class="ftag active" id="sort-users-name" onclick="sortUsers('name',this)">↕ Nom</span>
+            <span class="ftag" id="sort-users-login" onclick="sortUsers('login',this)">↕ Connexion</span>
+            <span class="filter-count" id="f-users-count"></span>
+          </div>
+          <table class="data-table"><thead><tr><th>Nom</th><th>UPN</th><th>Dernière connexion</th><th>MFA</th><th>Licences</th></tr></thead><tbody id="tbl-all-users"></tbody></table>
+        </div>
+
+        <div class="data-panel">
+          <div class="dp-head"><span class="dp-title">Administrateurs globaux</span><span class="dp-count" id="cnt-admins">—</span></div>
+          <div class="filter-bar">
+            <input class="filter-search" id="f-admins-search" placeholder="Rechercher..." oninput="filterAdmins()">
+            <span class="filter-count" id="f-admins-count"></span>
+          </div>
+          <table class="data-table"><thead><tr><th>Nom</th><th>UPN</th><th>Statut</th></tr></thead><tbody id="tbl-admins"></tbody></table>
+        </div>
+      </div>
+
+      <!-- STRATÉGIES -->
+      <div class="view" id="view-policies">
+        <div class="metrics" id="policies-metrics"></div>
+        <div class="data-panel">
+          <div class="dp-head"><span class="dp-title">Politiques d'accès conditionnel</span><span class="dp-count" id="cnt-ca">—</span></div>
+          <div class="filter-bar">
+            <input class="filter-search" id="f-ca-search" placeholder="Rechercher une politique..." oninput="filterCA()">
+            <div class="filter-sep"></div>
+            <span class="ftag active" data-group="castate" onclick="setCAFilter('all',this)">Toutes</span>
+            <span class="ftag" data-group="castate" onclick="setCAFilter('enabled',this)">Activées</span>
+            <span class="ftag" data-group="castate" onclick="setCAFilter('report',this)">Rapport seul</span>
+            <span class="ftag" data-group="castate" onclick="setCAFilter('disabled',this)">Désactivées</span>
+            <span class="filter-count" id="f-ca-count"></span>
+          </div>
+          <table class="data-table"><thead><tr><th>Nom</th><th>État</th><th>Utilisateurs</th><th>Contrôles</th></tr></thead><tbody id="tbl-ca"></tbody></table>
+        </div>
+      </div>
+
+      <!-- INTUNE -->
+      <div class="view" id="view-intune">
+        <div class="metrics" id="intune-metrics"></div>
+        <div id="intune-platforms"></div>
+        <div class="data-panel">
+          <div class="dp-head"><span class="dp-title">Appareils</span><span class="dp-count" id="cnt-nc">—</span></div>
+          <div class="filter-bar">
+            <input class="filter-search" id="f-dev-search" placeholder="Rechercher appareil / utilisateur..." oninput="filterDevices()">
+            <div class="filter-sep"></div>
+            <span class="ftag active" data-group="compliance" onclick="setDevFilter('compliance','all',this)">Tous</span>
+            <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','compliant',this)">Conformes</span>
+            <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','noncompliant',this)">Non conformes</span>
+            <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','unknown',this)">Inconnus</span>
+            <div class="filter-sep"></div>
+            <span class="ftag active" id="f-dev-os-all" data-group="os" onclick="setDevFilter('os','all',this)">Toutes plateformes</span>
+            <span class="filter-count" id="f-dev-count"></span>
+          </div>
+          <table class="data-table"><thead><tr><th>Appareil</th><th>Utilisateur</th><th>Plateforme</th><th>Version OS</th><th>Conformité</th><th>Dernière synchro</th></tr></thead><tbody id="tbl-nc"></tbody></table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = "db07380a-3195-4dda-9633-850e114c4fbd";
+const msalConfig = { auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/common", redirectUri: "http://localhost:5500/audit.html" }, cache: { cacheLocation: "sessionStorage" } };
+const scopes = ["User.Read.All","Policy.Read.All","Directory.Read.All","AuditLog.Read.All","Organization.Read.All","RoleManagement.Read.All","UserAuthenticationMethod.Read.All","SecurityEvents.Read.All","DeviceManagementManagedDevices.Read.All"];
+
+let _msal = null, _token = null, _data = {}, _charts = {};
+
+function getMsal() { if (!_msal) _msal = new msal.PublicClientApplication(msalConfig); return _msal; }
+async function login() {
+  try {
+    showErr(false);
+    const m = getMsal();
+    const r = await m.loginPopup({ scopes });
+    m.setActiveAccount(r.account);
+    _token = (await m.acquireTokenSilent({ scopes, account: r.account })).accessToken;
+    set("nav-user", r.account.username);
+    await runAudit();
+  } catch(e) { showErr(e.message || String(e)); }
+}
+async function logout() { getMsal().logoutPopup(); location.reload(); }
+async function relancer() {
+  try {
+    const m = getMsal(), acc = m.getActiveAccount();
+    if (!acc) { location.reload(); return; }
+    _token = (await m.acquireTokenSilent({ scopes, account: acc })).accessToken;
+    await runAudit();
+  } catch(e) { location.reload(); }
+}
+function showErr(msg) { const el = document.getElementById("error-msg"); el.style.display = msg ? "block" : "none"; el.textContent = msg || ""; }
+function loading(txt) { document.getElementById("loading").classList.add("active"); document.getElementById("loading-text").textContent = txt || "Chargement..."; }
+function loaded() { document.getElementById("loading").classList.remove("active"); }
+
+async function gGet(url) {
+  const base = url.startsWith("http") ? "" : "https://graph.microsoft.com/v1.0";
+  const r = await fetch(base + url, { headers: { Authorization: "Bearer " + _token, ConsistencyLevel: "eventual" } });
+  if (!r.ok) { if (r.status === 403) return null; throw new Error("Graph " + r.status); }
+  return r.json();
+}
+async function gBeta(url) {
+  const r = await fetch("https://graph.microsoft.com/beta" + url, { headers: { Authorization: "Bearer " + _token } });
+  if (!r.ok) return null; return r.json();
+}
+async function gAll(url) {
+  let res = [], next = url;
+  while (next) {
+    const d = await gGet(next); if (!d) break;
+    res = res.concat(d.value || []);
+    next = d["@odata.nextLink"] || null;
+  }
+  return res;
+}
+
+async function runAudit() {
+  loading("Récupération des informations du tenant...");
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+
+  try {
+    const org = await gGet("/organization");
+    const tenant = org?.value?.[0];
+
+    loading("Analyse des utilisateurs...");
+    const users = await gAll("/users?$top=999&$select=id,displayName,userPrincipalName,accountEnabled,userType,assignedLicenses,signInActivity,passwordPolicies&$filter=userType eq 'Member'");
+
+    loading("Vérification MFA...");
+    const authMethods = await gAll("/reports/authenticationMethods/userRegistrationDetails?$top=999");
+
+    loading("Politiques d'accès conditionnel...");
+    const caRaw = await gGet("/identity/conditionalAccess/policies");
+    const caPolicies = caRaw?.value || [];
+
+    loading("Administrateurs globaux...");
+    const adminsRaw = await gGet("/directoryRoles/roleTemplateId=62e90394-69f5-4237-9190-012177145e10/members");
+    const globalAdmins = adminsRaw?.value || [];
+
+    loading("Secure Score...");
+    const ssRaw = await gGet("/security/secureScores?$top=1");
+    const secureScore = ssRaw?.value?.[0];
+
+    loading("Appareils Intune...");
+    const devRaw = await gGet("/deviceManagement/managedDevices?$select=id,deviceName,operatingSystem,complianceState,userDisplayName,userPrincipalName,lastSyncDateTime,osVersion&$top=999");
+    const devices = devRaw?.value || null;
+
+    loaded();
+
+    const enabledUsers = users.filter(u => u.accountEnabled && u.assignedLicenses?.length > 0);
+    const d90 = new Date(Date.now() - 90*864e5);
+    const memberIds = new Set(enabledUsers.map(u => u.id));
+    const authF = authMethods.filter(u => memberIds.has(u.id));
+    const mfaUsers = authF.filter(u => u.isMfaRegistered);
+    const noMfaUsers = enabledUsers.filter(u => { const a = authF.find(x => x.id === u.id); return !a || !a.isMfaRegistered; });
+    const mfaRate = enabledUsers.length ? Math.round(mfaUsers.length / enabledUsers.length * 100) : 0;
+    const inactiveUsers = enabledUsers.filter(u => u.signInActivity?.lastSignInDateTime && new Date(u.signInActivity.lastSignInDateTime) < d90);
+    const enabledCA = caPolicies.filter(p => p.state === "enabled");
+    const legacyBlocked = caPolicies.some(p => p.state === "enabled" && p.conditions?.clientAppTypes?.some(t => ["exchangeActiveSync","other"].includes(t)) && p.grantControls?.builtInControls?.includes("block"));
+    const msScore = secureScore ? Math.round(secureScore.currentScore / secureScore.maxScore * 100) : null;
+
+    _data = { tenant, enabledUsers, noMfaUsers, mfaUsers, mfaRate, inactiveUsers, globalAdmins, caPolicies, enabledCA, legacyBlocked, secureScore, msScore, devices };
+
+    set("nav-tenant-name", tenant?.displayName || "—");
+    set("nav-tenant-dom", tenant?.verifiedDomains?.find(d => d.isDefault)?.name || "—");
+    set("nb-users", noMfaUsers.length);
+    document.getElementById("nb-users").className = "nav-badge" + (noMfaUsers.length > 0 ? " red" : "");
+    set("nb-intune", devices ? devices.length : "—");
+    set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
+
+    renderAll();
+  } catch(e) {
+    loaded(); showErr("Erreur : " + e.message);
+    document.getElementById("login-screen").style.display = "flex";
+    document.getElementById("app").style.display = "none";
+  }
+}
+
+function renderAll() { renderHome(); renderUsers(); renderPolicies(); renderIntune(); }
+
+function calcScore() {
+  const { mfaRate, enabledCA, legacyBlocked, globalAdmins, inactiveUsers, msScore } = _data;
+  const pts = {
+    mfa: mfaRate===100?20:mfaRate>=80?12:mfaRate>=50?6:0,
+    ca: enabledCA.length>=3?20:enabledCA.length>=1?10:0,
+    legacy: legacyBlocked?15:0,
+    admin: globalAdmins.length<=2?15:globalAdmins.length<=4?7:0,
+    inactive: inactiveUsers.length===0?15:inactiveUsers.length<=3?8:0,
+    ss: msScore===null?0:msScore>=70?15:msScore>=50?8:3
+  };
+  return { pts, total: Object.values(pts).reduce((a,b) => a+b, 0) };
+}
+
+function renderHome() {
+  const { enabledUsers, noMfaUsers, mfaUsers, mfaRate, inactiveUsers, globalAdmins, enabledCA, caPolicies, legacyBlocked, secureScore, msScore, devices } = _data;
+  const { pts, total } = calcScore();
+  const score = total;
+
+  const C = 314;
+  const circle = document.getElementById("score-circle");
+  circle.style.strokeDashoffset = C - (score/100)*C;
+  let color = score>=80?"#22c55e":score>=60?"#f59e0b":"#ef4444";
+  let label = score>=80?"Bon niveau":score>=60?"Niveau moyen":score>=40?"Insuffisant":"Critique";
+  circle.style.stroke = color;
+  set("score-num", score); document.getElementById("score-num").style.color = color;
+  const lbl = document.getElementById("score-label");
+  lbl.textContent = label; lbl.style.color = color; lbl.style.background = color + "18";
+  set("score-desc", score>=80?"Posture satisfaisante.":score>=60?"Actions correctives recommandées.":score>=40?"Risques importants identifiés.":"Remédiation urgente nécessaire.");
+
+  document.getElementById("home-metrics").innerHTML = [
+    { lbl:"Utilisateurs licenciés", val:enabledUsers.length, sub:"Membres actifs", cls:"blue" },
+    { lbl:"MFA enregistré", val:mfaRate+"%", sub:mfaUsers.length+"/"+enabledUsers.length, cls:mfaRate===100?"green":mfaRate>=80?"orange":"red" },
+    { lbl:"Comptes inactifs", val:inactiveUsers.length, sub:">90 jours", cls:inactiveUsers.length===0?"green":inactiveUsers.length<=5?"orange":"red" },
+    { lbl:"Admins globaux", val:globalAdmins.length, sub:"Recommandé : ≤2", cls:globalAdmins.length<=2?"green":globalAdmins.length<=4?"orange":"red" },
+    { lbl:"Politiques CA", val:enabledCA.length, sub:enabledCA.length+"/"+caPolicies.length+" configurées", cls:enabledCA.length>=3?"green":enabledCA.length>=1?"orange":"red" },
+    { lbl:"Secure Score MS", val:msScore!==null?msScore+"%":"N/A", sub:msScore!==null?Math.round(secureScore.currentScore)+"/"+Math.round(secureScore.maxScore)+" pts":"Indisponible", cls:msScore===null?"":msScore>=70?"green":msScore>=50?"orange":"red" }
+  ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub}</div></div>`).join("");
+
+  document.getElementById("home-checks").innerHTML = [
+    { name:"MFA utilisateurs", desc:mfaUsers.length+"/"+enabledUsers.length+" avec MFA", pts:pts.mfa, max:20, s:mfaRate===100?"green":mfaRate>=80?"orange":"red", val:mfaRate+"%" },
+    { name:"Accès conditionnel", desc:enabledCA.length+" active(s) sur "+caPolicies.length, pts:pts.ca, max:20, s:enabledCA.length>=3?"green":enabledCA.length>=1?"orange":"red", val:enabledCA.length+" CA" },
+    { name:"Legacy Auth", desc:"Basic Auth / EWS / ActiveSync", pts:pts.legacy, max:15, s:legacyBlocked?"green":"red", val:legacyBlocked?"Bloqué":"Exposé" },
+    { name:"Admins globaux", desc:"Recommandé : 2 maximum", pts:pts.admin, max:15, s:globalAdmins.length<=2?"green":globalAdmins.length<=4?"orange":"red", val:globalAdmins.length+" admin(s)" },
+    { name:"Comptes inactifs", desc:"Licenciés sans connexion >90j", pts:pts.inactive, max:15, s:inactiveUsers.length===0?"green":inactiveUsers.length<=5?"orange":"red", val:inactiveUsers.length+" compte(s)" },
+    { name:"Secure Score MS", desc:msScore!==null?msScore+"% du score max":"Données indisponibles", pts:pts.ss, max:15, s:msScore===null?"gray":msScore>=70?"green":msScore>=50?"orange":"red", val:msScore!==null?msScore+"%":"N/A" }
+  ].map(c => `<div class="check-card"><div class="cc-top"><span class="cc-name">${c.name}</span><span class="cc-pts">${c.pts}/${c.max}</span></div><div class="cc-desc">${c.desc}</div><div class="cc-bot"><span class="cc-val">${c.val}</span><span class="pill pill-${c.s}"><span class="pill-dot"></span>${c.s==="green"?"OK":c.s==="orange"?"Partiel":c.s==="red"?"Critique":"N/A"}</span></div></div>`).join("");
+
+  const recos = [];
+  if (mfaRate < 100) recos.push({ t:"MFA utilisateurs", p:noMfaUsers.length+" utilisateur(s) sans MFA. Forcer via CA ou Entra ID Authentication Methods." });
+  if (!legacyBlocked) recos.push({ t:"Legacy Auth non bloqué", p:"Créer une politique CA ciblant exchangeActiveSync et other avec blocage. Vecteur d'attaque majeur." });
+  if (enabledCA.length < 3) recos.push({ t:"Accès conditionnel insuffisant", p:"Recommandé : blocage legacy auth, exigence MFA, conformité des appareils. "+enabledCA.length+" politique(s) active(s) détectée(s)." });
+  if (globalAdmins.length > 2) recos.push({ t:"Trop d'administrateurs globaux", p:globalAdmins.length+" admins globaux. Réduire à 2 max. Utiliser des rôles délégués (Exchange Admin, User Admin...)." });
+  if (inactiveUsers.length > 0) recos.push({ t:"Comptes inactifs licenciés", p:inactiveUsers.length+" compte(s) sans connexion depuis 90j. Désactiver selon les procédures RH." });
+  document.getElementById("home-recos").innerHTML = recos.map(r => `<div class="reco"><h4>⚠ ${r.t}</h4><p>${r.p}</p></div>`).join("") +
+    `<div class="reco info"><h4>ℹ Migration GDAP recommandée</h4><p>L'accès MSP via compte admin local présente des risques. Migrer vers GDAP via le Partner Center pour un accès granulaire, temporaire et traçable.</p></div>`;
+
+  renderCharts();
+}
+
+function renderCharts() {
+  const { mfaUsers, noMfaUsers, devices } = _data;
+  const co = { plugins: { legend: { labels: { color:"#6b7494", font:{ family:"'DM Sans'", size:11 } } } } };
+
+  if (_charts.mfa) _charts.mfa.destroy();
+  _charts.mfa = new Chart(document.getElementById("chart-mfa"), {
+    type:"doughnut",
+    data:{ labels:["Avec MFA","Sans MFA"], datasets:[{ data:[mfaUsers.length,noMfaUsers.length], backgroundColor:["#22c55e","#ef4444"], borderWidth:0, hoverOffset:4 }] },
+    options:{ ...co, cutout:"70%", maintainAspectRatio:false }
+  });
+
+  if (_charts.intune) _charts.intune.destroy();
+  if (devices && devices.length > 0) {
+    const c = devices.filter(d => d.complianceState==="compliant").length;
+    const nc = devices.filter(d => d.complianceState==="noncompliant").length;
+    const u = devices.filter(d => d.complianceState!=="compliant"&&d.complianceState!=="noncompliant").length;
+    _charts.intune = new Chart(document.getElementById("chart-intune"), {
+      type:"doughnut",
+      data:{ labels:["Conformes","Non conformes","Inconnus"], datasets:[{ data:[c,nc,u], backgroundColor:["#22c55e","#ef4444","#f59e0b"], borderWidth:0, hoverOffset:4 }] },
+      options:{ ...co, cutout:"70%", maintainAspectRatio:false }
+    });
+  } else {
+    document.getElementById("chart-intune-wrap").innerHTML = '<div class="empty">Intune non configuré</div>';
+  }
+}
+
+function renderUsers() {
+  const { enabledUsers, noMfaUsers, mfaUsers, mfaRate, inactiveUsers, globalAdmins } = _data;
+  document.getElementById("users-metrics").innerHTML = [
+    { lbl:"Membres actifs licenciés", val:enabledUsers.length, sub:"", cls:"blue" },
+    { lbl:"Avec MFA", val:mfaUsers.length, sub:mfaRate+"% des comptes", cls:mfaRate===100?"green":mfaRate>=80?"orange":"red" },
+    { lbl:"Sans MFA", val:noMfaUsers.length, sub:"À régulariser", cls:noMfaUsers.length===0?"green":"red" },
+    { lbl:"Inactifs >90j", val:inactiveUsers.length, sub:"Licenciés", cls:inactiveUsers.length===0?"green":inactiveUsers.length<=5?"orange":"red" },
+    { lbl:"Admins globaux", val:globalAdmins.length, sub:"Recommandé ≤2", cls:globalAdmins.length<=2?"green":globalAdmins.length<=4?"orange":"red" }
+  ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div>${m.sub?`<div class="metric-sub">${m.sub}</div>`:""}</div>`).join("");
+
+  set("cnt-admins", globalAdmins.length+" admin(s)");
+  filterUsers();
+  filterAdmins();
+}
+
+let _uf = { type:"all", sort:"name", dir:1 };
+let _caf = { type:"all" };
+let _df = { compliance:"all", os:"all" };
+
+function setUserFilter(type, el) {
+  _uf.type = type;
+  el.closest(".filter-bar").querySelectorAll(".ftag[data-group='utype']").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  filterUsers();
+}
+
+function sortUsers(by, el) {
+  if (_uf.sort === by) { _uf.dir *= -1; }
+  else { _uf.sort = by; _uf.dir = 1; }
+  document.querySelectorAll("#sort-users-name,#sort-users-login").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  filterUsers();
+}
+
+function filterUsers() {
+  const { enabledUsers, noMfaUsers, inactiveUsers } = _data;
+  const authF = _data.authMethods || [];
+  const memberIds = new Set(enabledUsers.map(u => u.id));
+  const noMfaIds = new Set(noMfaUsers.map(u => u.id));
+  const inactiveIds = new Set(inactiveUsers.map(u => u.id));
+  const d90 = new Date(Date.now() - 90*864e5);
+  const neverIds = new Set(enabledUsers.filter(u => !u.signInActivity?.lastSignInDateTime).map(u => u.id));
+
+  const q = (document.getElementById("f-users-search")?.value || "").toLowerCase();
+
+  let users = enabledUsers.filter(u => {
+    if (q && !u.displayName?.toLowerCase().includes(q) && !u.userPrincipalName?.toLowerCase().includes(q)) return false;
+    if (_uf.type === "nomfa") return noMfaIds.has(u.id);
+    if (_uf.type === "inactive") return inactiveIds.has(u.id);
+    if (_uf.type === "neverlogin") return neverIds.has(u.id);
+    return true;
+  });
+
+  users = users.sort((a, b) => {
+    if (_uf.sort === "login") {
+      const da = a.signInActivity?.lastSignInDateTime ? new Date(a.signInActivity.lastSignInDateTime) : new Date(0);
+      const db = b.signInActivity?.lastSignInDateTime ? new Date(b.signInActivity.lastSignInDateTime) : new Date(0);
+      return (da - db) * _uf.dir;
+    }
+    return (a.displayName||"").localeCompare(b.displayName||"") * _uf.dir;
+  });
+
+  set("cnt-all-users", enabledUsers.length+" total");
+  set("f-users-count", users.length+" résultat(s)");
+  document.getElementById("tbl-all-users").innerHTML = users.map(u => {
+    const hasMfa = !noMfaIds.has(u.id);
+    const lastLogin = u.signInActivity?.lastSignInDateTime;
+    return `<tr>
+      <td>${u.displayName||"—"}</td>
+      <td class="mono">${u.userPrincipalName||"—"}</td>
+      <td class="mono">${lastLogin ? new Date(lastLogin).toLocaleDateString("fr-FR") : "Jamais"}</td>
+      <td><span class="pill pill-${hasMfa?"green":"red"}"><span class="pill-dot"></span>${hasMfa?"MFA OK":"Sans MFA"}</span></td>
+      <td>${u.assignedLicenses?.length||0}</td>
+    </tr>`;
+  }).join("") || '<tr><td colspan="5" class="empty">Aucun résultat</td></tr>';
+}
+
+function filterAdmins() {
+  const { globalAdmins } = _data;
+  const q = (document.getElementById("f-admins-search")?.value || "").toLowerCase();
+  const admins = globalAdmins.filter(u => !q || u.displayName?.toLowerCase().includes(q) || u.userPrincipalName?.toLowerCase().includes(q));
+  set("f-admins-count", admins.length+" résultat(s)");
+  document.getElementById("tbl-admins").innerHTML = admins.map(u =>
+    `<tr><td>${u.displayName||"—"}</td><td class="mono">${u.userPrincipalName||u.mail||"—"}</td><td><span class="pill pill-${globalAdmins.length>2?"orange":"green"}"><span class="pill-dot"></span>Admin Global</span></td></tr>`
+  ).join("") || '<tr><td colspan="3" class="empty">Aucun résultat</td></tr>';
+}
+
+function setCAFilter(type, el) {
+  _caf.type = type;
+  el.closest(".filter-bar").querySelectorAll(".ftag[data-group='castate']").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  filterCA();
+}
+
+function filterCA() {
+  const { caPolicies } = _data;
+  const q = (document.getElementById("f-ca-search")?.value || "").toLowerCase();
+  let policies = caPolicies.filter(p => {
+    if (q && !p.displayName?.toLowerCase().includes(q)) return false;
+    if (_caf.type === "enabled") return p.state === "enabled";
+    if (_caf.type === "report") return p.state === "enabledForReportingButNotEnforced";
+    if (_caf.type === "disabled") return p.state === "disabled";
+    return true;
+  });
+  set("cnt-ca", caPolicies.length+" politique(s)");
+  set("f-ca-count", policies.length+" résultat(s)");
+  document.getElementById("tbl-ca").innerHTML = policies.map(p => {
+    const s = p.state==="enabled"?"green":p.state==="enabledForReportingButNotEnforced"?"orange":"gray";
+    const sl = p.state==="enabled"?"Activée":p.state==="enabledForReportingButNotEnforced"?"Rapport seul":"Désactivée";
+    const users = p.conditions?.users?.includeUsers?.includes("All")?"Tous":(p.conditions?.users?.includeGroups?.length||0)+" groupe(s)";
+    const ctrl = p.grantControls?.builtInControls?.join(", ")||"—";
+    return `<tr><td>${p.displayName||"—"}</td><td><span class="pill pill-${s}"><span class="pill-dot"></span>${sl}</span></td><td>${users}</td><td class="mono" style="font-size:.68rem">${ctrl}</td></tr>`;
+  }).join("") || '<tr><td colspan="4" class="empty">Aucun résultat</td></tr>';
+}
+
+function setDevFilter(type, val, el) {
+  _df[type] = val;
+  el.closest(".filter-bar").querySelectorAll(`.ftag[data-group='${type}']`).forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  filterDevices();
+}
+
+function filterDevices() {
+  const { devices } = _data;
+  if (!devices) return;
+  const q = (document.getElementById("f-dev-search")?.value || "").toLowerCase();
+  let devs = devices.filter(d => {
+    if (q && !d.deviceName?.toLowerCase().includes(q) && !d.userDisplayName?.toLowerCase().includes(q) && !d.userPrincipalName?.toLowerCase().includes(q)) return false;
+    if (_df.compliance !== "all") {
+      if (_df.compliance === "compliant" && d.complianceState !== "compliant") return false;
+      if (_df.compliance === "noncompliant" && d.complianceState !== "noncompliant") return false;
+      if (_df.compliance === "unknown" && (d.complianceState === "compliant" || d.complianceState === "noncompliant")) return false;
+    }
+    if (_df.os !== "all" && d.operatingSystem !== _df.os) return false;
+    return true;
+  });
+  set("cnt-nc", devices.length+" total");
+  set("f-dev-count", devs.length+" résultat(s)");
+  document.getElementById("tbl-nc").innerHTML = devs.map(d => {
+    const cs = d.complianceState==="compliant"?"green":d.complianceState==="noncompliant"?"red":"orange";
+    const cl = d.complianceState==="compliant"?"Conforme":d.complianceState==="noncompliant"?"Non conforme":"Inconnu";
+    return `<tr><td>${d.deviceName||"—"}</td><td>${d.userDisplayName||"—"}</td><td>${d.operatingSystem||"—"}</td><td class="mono">${d.osVersion||"—"}</td><td><span class="pill pill-${cs}"><span class="pill-dot"></span>${cl}</span></td><td class="mono">${d.lastSyncDateTime?new Date(d.lastSyncDateTime).toLocaleDateString("fr-FR"):"Jamais"}</td></tr>`;
+  }).join("") || '<tr><td colspan="6" class="empty">Aucun résultat</td></tr>';
+}
+
+function renderPolicies() {
+  const { enabledCA, caPolicies, legacyBlocked, msScore, secureScore } = _data;
+  document.getElementById("policies-metrics").innerHTML = [
+    { lbl:"CA actives", val:enabledCA.length, sub:enabledCA.length+"/"+caPolicies.length+" configurées", cls:enabledCA.length>=3?"green":enabledCA.length>=1?"orange":"red" },
+    { lbl:"Legacy Auth", val:legacyBlocked?"Bloqué":"Exposé", sub:"Basic Auth / EWS", cls:legacyBlocked?"green":"red" },
+    { lbl:"Secure Score MS", val:msScore!==null?msScore+"%":"N/A", sub:msScore!==null?Math.round(secureScore.currentScore)+"/"+Math.round(secureScore.maxScore)+" pts":"Indisponible", cls:msScore===null?"":msScore>=70?"green":msScore>=50?"orange":"red" }
+  ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub}</div></div>`).join("");
+
+  set("cnt-ca", caPolicies.length+" politique(s)");
+  filterCA();
+}
+
+function renderIntune() {
+  const { devices } = _data;
+  if (!devices) {
+    document.getElementById("intune-metrics").innerHTML = '<div class="metric"><div class="metric-lbl">Intune</div><div class="metric-val" style="font-size:1rem;color:var(--text2)">Non configuré</div></div>';
+    document.getElementById("intune-platforms").innerHTML = '<div class="data-panel" style="padding:1.25rem;text-align:center;color:var(--text2);font-size:.78rem">Intune non configuré ou permissions insuffisantes sur ce tenant.</div>';
+    set("cnt-nc", "0");
+    return;
+  }
+  const compliant = devices.filter(d => d.complianceState==="compliant");
+  const nonCompliant = devices.filter(d => d.complianceState==="noncompliant");
+  const unknown = devices.filter(d => d.complianceState!=="compliant"&&d.complianceState!=="noncompliant");
+
+  document.getElementById("intune-metrics").innerHTML = [
+    { lbl:"Total appareils", val:devices.length, sub:"", cls:"blue" },
+    { lbl:"Conformes", val:compliant.length, sub:"", cls:"green" },
+    { lbl:"Non conformes", val:nonCompliant.length, sub:"", cls:nonCompliant.length===0?"green":"red" },
+    { lbl:"Inconnus", val:unknown.length, sub:"", cls:unknown.length===0?"green":"orange" }
+  ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div></div>`).join("");
+
+  const platforms = {};
+  const icons = { Windows:"🖥", iOS:"📱", Android:"📱", macOS:"💻" };
+  devices.forEach(d => {
+    const os = d.operatingSystem||"Autre";
+    if (!platforms[os]) platforms[os] = { all:[], c:[], nc:[], u:[] };
+    platforms[os].all.push(d);
+    if (d.complianceState==="compliant") platforms[os].c.push(d);
+    else if (d.complianceState==="noncompliant") platforms[os].nc.push(d);
+    else platforms[os].u.push(d);
+  });
+  _data.byPlatform = platforms;
+
+  document.getElementById("intune-platforms").innerHTML = `<div class="platform-grid">${
+    Object.entries(platforms).map(([os, d]) => `
+      <div class="platform-card" onclick="showPlatformModal('${os}')">
+        <div class="pc-top"><span class="pc-os">${icons[os]||"💾"} ${os}</span><span class="pc-total">${d.all.length}</span></div>
+        <div class="pc-stats">
+          <div class="pc-stat"><span>Conformes</span><span style="color:var(--green)">${d.c.length}</span></div>
+          <div class="pc-stat"><span>Non conformes</span><span style="color:${d.nc.length>0?"var(--red)":"var(--green)"}">${d.nc.length}</span></div>
+          ${d.u.length>0?`<div class="pc-stat"><span>Inconnus</span><span style="color:var(--orange)">${d.u.length}</span></div>`:""}
+        </div>
+      </div>`
+    ).join("")}
+  </div>`;
+
+  set("cnt-nc", devices.length+" total");
+
+  const devIcons = { Windows:"🖥", iOS:"📱", Android:"📱", macOS:"💻" };
+  const osTags = Object.keys(platforms).map(os =>
+    `<span class="ftag" data-group="os" onclick="setDevFilter('os','${os}',this)">${devIcons[os]||"💾"} ${os}</span>`
+  ).join("");
+  const filterBar = document.querySelector("#view-intune .filter-bar");
+  if (filterBar) {
+    const existing = filterBar.querySelector("#f-os-tags");
+    if (!existing) {
+      const sep = document.createElement("div"); sep.className="filter-sep";
+      const wrap = document.createElement("span"); wrap.id="f-os-tags"; wrap.innerHTML = osTags;
+      filterBar.insertBefore(sep, filterBar.querySelector(".filter-count"));
+      filterBar.insertBefore(wrap, filterBar.querySelector(".filter-count"));
+    }
+  }
+  _df = { compliance:"all", os:"all" };
+  filterDevices();
+}
+
+function showPlatformModal(os) {
+  const d = _data.byPlatform?.[os]; if (!d) return;
+  document.getElementById("modal-title").textContent = os+" — Tous les appareils";
+  document.getElementById("modal-cnt").textContent = d.all.length+" appareil(s)";
+  document.getElementById("modal-body").innerHTML = d.all.map(dev => `
+    <div class="modal-row">
+      <div class="mr-main"><div class="mr-name">${dev.deviceName||"—"}</div><div class="mr-sub">${dev.userPrincipalName||dev.userDisplayName||"—"}</div></div>
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <span class="mr-meta">${dev.osVersion||""}</span>
+        <span class="pill pill-${dev.complianceState==="compliant"?"green":dev.complianceState==="noncompliant"?"red":"orange"}"><span class="pill-dot"></span>${dev.complianceState==="compliant"?"Conforme":dev.complianceState==="noncompliant"?"Non conforme":"Inconnu"}</span>
+      </div>
+    </div>`).join("");
+  document.getElementById("modal-overlay").classList.add("active");
+}
+
+function closeModal() { document.getElementById("modal-overlay").classList.remove("active"); }
+
+function showView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-"+name).classList.add("active");
+  document.getElementById("nav-"+name).classList.add("active");
+  document.getElementById("topbar-title").textContent = {home:"Vue d'ensemble",users:"Utilisateurs",policies:"Stratégies",intune:"Intune"}[name]||name;
+}
+
+function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+</script>
+</body>
+</html>
