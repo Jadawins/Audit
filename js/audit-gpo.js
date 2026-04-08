@@ -228,7 +228,7 @@ function _filterGPOTable() {
   tbl.innerHTML = gpos.map(g => {
     const issuePills = g.issues.map(i => {
       const lbl = i==="unlinked"?"Sans lien":i==="empty"?"Vide":i==="disabled"?"Désactivée":"?";
-      return `<span class="pill pill-${i==="unlinked"?"red":"orange'}"><span class="pill-dot"></span>${lbl}</span>`;
+      return `<span class="pill pill-${i==="unlinked"?"red":"orange"}"><span class="pill-dot"></span>${lbl}</span>`;
     }).join("");
     const catColor  = g.category==="intune"?"blue":g.category==="inutile"?"gray":"green";
     const catLabel  = g.category==="intune"?"→ Intune":g.category==="inutile"?"Inutile":"Conserver AD";

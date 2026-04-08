@@ -310,7 +310,7 @@ function _buildFullRecos() {
     if (!r.alerts || r.alerts.length === 0) return "";
     return `<div style="margin-bottom:1rem">
       <div class="sh"><span class="sh-title">${r.section}</span><a class="sh-link" href="${r.href}">Voir le détail →</a></div>
-      ${r.alerts.map(a => `<div class="reco${a.lvl==="red"?" crit":"'}"><h4>⚠ ${a.msg}</h4><p>Consultez la page <a href="${r.href}" style="color:var(--acc2)">${r.section}</a> pour les détails et recommandations.</p></div>`).join("")}
+      ${r.alerts.map(a => `<div class="reco${a.lvl==="red"?" crit":""}"><h4>⚠ ${a.msg}</h4><p>Consultez la page <a href="${r.href}" style="color:var(--acc2)">${r.section}</a> pour les détails et recommandations.</p></div>`).join("")}
     </div>`;
   }).join("");
 

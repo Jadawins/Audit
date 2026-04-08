@@ -281,7 +281,7 @@ function showPlatformModal(os) {
       </div>
       <div style="display:flex;align-items:center;gap:.6rem">
         <span class="mr-meta">${dev.osVersion||""}</span>
-        <span class="pill pill-${dev.complianceState==="compliant"?"green":dev.complianceState==="noncompliant"?"red":"orange'}">
+        <span class="pill pill-${dev.complianceState==="compliant"?"green":dev.complianceState==="noncompliant"?"red":"orange"}">
           <span class="pill-dot"></span>${dev.complianceState==="compliant"?"Conforme":dev.complianceState==="noncompliant"?"Non conforme":"Inconnu"}
         </span>
       </div>
