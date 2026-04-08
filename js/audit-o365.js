@@ -87,10 +87,8 @@ async function fetchO365Data(updateFn) {
   const adminIds   = new Set(globalAdmins.map(u => u.id));
   const priorityIds = new Set([...adminIds, ...noMfaIds]);
 
-  // Limiter le scan aux comptes prioritaires (max 30 pour éviter throttling)
-  const scanTargets = enabledUsers
-    .filter(u => priorityIds.has(u.id))
-    .slice(0, 30);
+  // Scan tous les comptes prioritaires (admins + sans MFA)
+  const scanTargets = enabledUsers.filter(u => priorityIds.has(u.id));
 
   const otherCount = enabledUsers.length - scanTargets.length;
 
@@ -110,13 +108,14 @@ async function fetchO365Data(updateFn) {
 
 async function _scanInboxRules(users, updateFn) {
   const results = [];
-  let i = 0;
-  for (const u of users) {
-    i++;
-    if (i % 5 === 0 && updateFn) updateFn("Règles inbox — " + i + "/" + users.length + "...");
+  for (let i = 0; i < users.length; i++) {
+    const u = users[i];
+    if (updateFn) updateFn("Règles inbox — " + (i+1) + "/" + users.length + "...");
+    // Pause anti-throttling toutes les 10 requêtes
+    if (i > 0 && i % 10 === 0) await new Promise(r => setTimeout(r, 200));
     try {
       const data = await gGet("/users/" + u.id + "/mailFolders/inbox/messageRules");
-      if (!data) { results.push({ user: u, rules: [], error: "403 — permission refusée", suspicious: false }); continue; }
+      if (!data) { results.push({ user: u, rules: [], error: "403", suspicious: false }); continue; }
       const rules = data.value || [];
       const flagged = rules.filter(r => _isSuspiciousRule(r));
       if (flagged.length > 0) {
