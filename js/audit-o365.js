@@ -183,18 +183,27 @@ function renderO365Page(d) {
     { lbl:"Licences gaspillées",    val:d.wastedLicenses.length,   sub:"Comptes inactifs/désactivés",  cls:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red" },
     { lbl:"Coût estimé gaspillé",   val:"≈"+d.wastedCost+"€",      sub:"Par mois (indicatif)",         cls:d.wastedCost===0?"green":d.wastedCost<100?"orange":"red" },
     { lbl:"Comptes désactivés+lic", val:d.disabledUsers.length,    sub:"Licences inutiles",            cls:d.disabledUsers.length===0?"green":"red" },
-    { lbl:"Règles suspectes",       val:d.suspiciousRules.length,  sub:d.scannedCount+" comptes scannés", cls:d.suspiciousRules.length===0?"green":"red" }
+    { lbl:"Règles suspectes",       val:d.suspiciousRules.length,  sub:d.scannedCount+" admins/sans-MFA scannés", cls:d.suspiciousRules.length===0?"green":"red" }
   ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub||""}</div></div>`).join("");
 
   // Points d'audit
   const cEl = document.getElementById("o365-checks");
   if (cEl) cEl.innerHTML = [
     { name:"Licences gaspillées", desc:d.wastedLicenses.length+" compte(s) inactif/désactivé avec licence", pts:pts.licenses, max:40, s:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red", val:d.wastedLicenses.length+" compte(s)" },
-    { name:"Règles inbox",        desc:d.suspiciousRules.length+" règle(s) suspecte(s) sur "+d.scannedCount+" scannés", pts:pts.rules, max:60, s:d.suspiciousRules.length===0?"green":d.suspiciousRules.length<=2?"orange":"red", val:d.suspiciousRules.length+" règle(s)" }
+    { name:"Règles inbox",        desc:d.suspiciousRules.length+" règle(s) suspecte(s) · scan ciblé sur "+d.scannedCount+" comptes prioritaires (admins globaux + sans MFA)", pts:pts.rules, max:60, s:d.suspiciousRules.length===0?"green":d.suspiciousRules.length<=2?"orange":"red", val:d.suspiciousRules.length+" règle(s)" }
   ].map(c => { const lbl=c.s==="green"?"OK":c.s==="orange"?"Attention":"Critique"; return `<div class="check-card"><div class="cc-top"><span class="cc-name">${c.name}</span><span class="cc-pts">${c.pts}/${c.max}</span></div><div class="cc-desc">${c.desc}</div><div class="cc-bot"><span class="cc-val">${c.val}</span><span class="pill pill-${c.s}"><span class="pill-dot"></span>${lbl}</span></div></div>`; }).join("");
 
   // Recommandations
   _renderO365Recos(d);
+
+  // Notice scan partiel
+  const partialEl = document.getElementById("rules-partial-msg");
+  if (partialEl) {
+    const total = d.enabledUsers.length;
+    partialEl.style.display = "block";
+    partialEl.textContent = "Scan ciblé sur " + d.scannedCount + "/" + total + " comptes prioritaires (administrateurs globaux + utilisateurs sans MFA). "
+      + (d.otherCount > 0 ? d.otherCount + " compte(s) non prioritaire(s) non scannés." : "Tous les comptes prioritaires ont été analysés.");
+  }
 
   // Tables
   _renderWastedTable(d);
