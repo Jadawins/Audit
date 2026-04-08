@@ -9,19 +9,12 @@ jobs:
   deploy:
     name: Deploy to auditms.fr
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
-          script: |
-            cd /var/www/auditms/app
-            git pull origin main
-            pm2 reload /var/www/auditms/ecosystem.config.js --update-env
-            pm2 save
-            echo "Déploiement terminé : $(date)"
+      - name: Trigger deploy webhook
+        run: |
+          curl -f -X POST https://auditms.fr/api/deploy \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.WEBHOOK_SECRET }}" \
+            -d '{"ref":"refs/heads/main"}'
