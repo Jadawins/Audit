@@ -198,10 +198,17 @@ function renderO365Page(d) {
   // Notice scan partiel
   const partialEl = document.getElementById("rules-partial-msg");
   if (partialEl) {
-    const total = d.enabledUsers.length;
+    const totalUsers = d.enabledUsers.length;
+    const all403 = d.scannedCount > 0 && d.rulesResults.every(r => r.error === "403");
     partialEl.style.display = "block";
-    partialEl.textContent = "Scan ciblé sur " + d.scannedCount + "/" + total + " comptes prioritaires (administrateurs globaux + utilisateurs sans MFA). "
-      + (d.otherCount > 0 ? d.otherCount + " compte(s) non prioritaire(s) non scannés." : "Tous les comptes prioritaires ont été analysés.");
+    if (all403) {
+      partialEl.style.color = "var(--red)";
+      partialEl.textContent = "⚠ Permission refusée (403) sur tous les comptes. Ajoutez MailboxSettings.Read dans les permissions déléguées de l'app Azure AD, puis reconnectez-vous.";
+    } else {
+      partialEl.style.color = "";
+      partialEl.textContent = "Scan ciblé sur " + d.scannedCount + "/" + totalUsers + " comptes prioritaires (administrateurs globaux + utilisateurs sans MFA). "
+        + (d.otherCount > 0 ? d.otherCount + " compte(s) non prioritaire(s) non scannés." : "Tous les comptes prioritaires ont été analysés.");
+    }
   }
 
   // Tables
