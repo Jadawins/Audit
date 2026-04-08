@@ -76,12 +76,13 @@ async function graphGetToken() {
   m.setActiveAccount(acc);
   try {
     const res = await m.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: acc });
-    if (!res.accessToken) throw new Error("Token vide");
+    if (!res?.accessToken) throw new Error("Token vide");
     _token = res.accessToken;
   } catch {
-    // Token silencieux échoué → popup
-    const res = await m.acquireTokenPopup({ scopes: GRAPH_SCOPES, account: acc });
-    _token = res.accessToken;
+    // Silent échoué → redirect login
+    sessionStorage.clear();
+    await m.loginRedirect({ scopes: GRAPH_SCOPES, prompt: "select_account" });
+    return ""; // jamais atteint, la page va se recharger
   }
   return _token;
 }
