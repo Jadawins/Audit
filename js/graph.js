@@ -23,7 +23,7 @@ function _getMsal() {
       auth: {
         clientId:    GRAPH_CLIENT_ID,
         authority:   "https://login.microsoftonline.com/common",
-        redirectUri: window.location.origin + "/blank.html"
+        redirectUri: window.location.origin + "/"
       },
       cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
     });
@@ -34,27 +34,34 @@ function _getMsal() {
 // ── Auth ──────────────────────────────────────────────────────────────────────
 async function graphLogin() {
   const m = _getMsal();
-  const r = await m.loginPopup({ scopes: GRAPH_SCOPES, prompt: "select_account" });
-  m.setActiveAccount(r.account);
-  _token = (await m.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: r.account })).accessToken;
+  await m.handleRedirectPromise();
+  await m.loginRedirect({ scopes: GRAPH_SCOPES, prompt: "select_account" });
+  // La page va se recharger après le redirect — la suite est dans graphInitPage
+}
 
-  // Stocker infos tenant pour la sidebar (toutes les pages)
-  try {
-    const org = await gGet("/organization");
-    const t = org?.value?.[0];
-    if (t) {
-      sessionStorage.setItem("tenant-name", t.displayName || "");
-      sessionStorage.setItem("tenant-dom",  t.verifiedDomains?.find(d => d.isDefault)?.name || "");
-    }
-  } catch {}
-
-  return r.account;
+async function _handleLoginRedirect() {
+  const m = _getMsal();
+  const result = await m.handleRedirectPromise();
+  if (result) {
+    m.setActiveAccount(result.account);
+    _token = result.accessToken;
+    // Stocker infos tenant
+    try {
+      const org = await gGet("/organization");
+      const t = org?.value?.[0];
+      if (t) {
+        sessionStorage.setItem("tenant-name", t.displayName || "");
+        sessionStorage.setItem("tenant-dom",  t.verifiedDomains?.find(d => d.isDefault)?.name || "");
+      }
+    } catch {}
+    return result.account;
+  }
+  return null;
 }
 
 async function graphLogout() {
   sessionStorage.clear();
-  try { await _getMsal().logoutPopup(); } catch {}
-  location.reload();
+  try { await _getMsal().logoutRedirect({ postLogoutRedirectUri: window.location.origin + "/" }); } catch { location.reload(); }
 }
 
 function graphHasSession() {
@@ -126,7 +133,10 @@ async function gGetOrg() {
 // Appelé au chargement de chaque page connectée.
 // onSession(account) : exécuté si session MSAL active
 // onNoSession        : exécuté sinon (optionnel)
-function graphInitPage(onSession, onNoSession) {
+async function graphInitPage(onSession, onNoSession) {
+  // Gérer le retour du redirect login
+  const redirectAcc = await _handleLoginRedirect();
+
   // Scores dans la sidebar depuis le cache
   ["entra","intune","o365","gpo"].forEach(p => {
     const score = sessionStorage.getItem("score-" + p);
@@ -146,14 +156,13 @@ function graphInitPage(onSession, onNoSession) {
   if (tName) { const el = document.getElementById("nav-tenant-name"); if (el) el.textContent = tName; }
   if (tDom)  { const el = document.getElementById("nav-tenant-dom");  if (el) el.textContent = tDom;  }
 
-  if (graphHasSession()) {
-    const m   = _getMsal();
-    const acc = m.getAllAccounts()[0];
-    if (acc) {
-      m.setActiveAccount(acc);
-      const el = document.getElementById("nav-user");
-      if (el) el.textContent = acc.username;
-    }
+  const m   = _getMsal();
+  const acc = redirectAcc || m.getActiveAccount() || m.getAllAccounts()[0];
+
+  if (acc) {
+    m.setActiveAccount(acc);
+    const el = document.getElementById("nav-user");
+    if (el) el.textContent = acc.username;
     const appEl   = document.getElementById("app");
     const loginEl = document.getElementById("login-screen");
     if (appEl)   appEl.style.display   = "block";
