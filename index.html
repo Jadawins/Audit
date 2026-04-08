@@ -10,7 +10,7 @@
 body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 2rem; padding: 2rem; }
 .logo { font-family: var(--mono); font-size: .72rem; letter-spacing: .25em; color: var(--text2); }
 .logo span { color: var(--accent); }
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; width: 100%; max-width: 680px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; width: 100%; max-width: 960px; }
 .card {
   background: var(--bg2); border: 1px solid var(--bd); border-radius: 12px;
   padding: 1.75rem; display: flex; flex-direction: column; gap: 1rem;
@@ -28,6 +28,8 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 .card-ms .card-icon svg { stroke: var(--acc2); }
 .card-gpo .card-icon { background: rgba(167,139,250,.1); }
 .card-gpo .card-icon svg { stroke: var(--purple); }
+.card-intune .card-icon { background: rgba(34,197,94,.1); }
+.card-intune .card-icon svg { stroke: var(--green); }
 .card-title { font-size: 1rem; font-weight: 500; }
 .card-desc { font-size: .78rem; color: var(--text2); line-height: 1.6; }
 .card-tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: auto; }
@@ -43,23 +45,38 @@ body { display: flex; flex-direction: column; align-items: center; justify-conte
 <div class="logo">AUDIT <span>TOOLS</span> · par William EINSARGUEIX</div>
 
 <div class="cards">
-  <a class="card card-ms" href="auditms.html">
+  <a class="card card-ms" href="entra.html">
     <div class="card-icon">
       <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
     </div>
     <div>
-      <div class="card-title">Audit M365</div>
-      <div class="card-desc">Analyse de sécurité d'un tenant Microsoft 365 — MFA, accès conditionnel, utilisateurs, Intune, Secure Score.</div>
+      <div class="card-title">Audit Entra ID</div>
+      <div class="card-desc">Analyse de sécurité d'un tenant Microsoft 365 — MFA, accès conditionnel, utilisateurs, Secure Score.</div>
     </div>
     <div class="card-tags">
       <span class="tag">Microsoft Graph</span>
       <span class="tag">MFA</span>
-      <span class="tag">Intune</span>
       <span class="tag">CA Policies</span>
+      <span class="tag">Secure Score</span>
     </div>
   </a>
 
-  <a class="card card-gpo" href="auditgpo.html">
+  <a class="card card-intune" href="intune.html">
+    <div class="card-icon">
+      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+    </div>
+    <div>
+      <div class="card-title">Audit Intune</div>
+      <div class="card-desc">Conformité des appareils managés — Windows, iOS, Android, macOS. Vue par plateforme et état de conformité.</div>
+    </div>
+    <div class="card-tags">
+      <span class="tag">Microsoft Graph</span>
+      <span class="tag">Appareils</span>
+      <span class="tag">Conformité</span>
+    </div>
+  </a>
+
+  <a class="card card-gpo" href="gpo.html">
     <div class="card-icon">
       <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
     </div>
