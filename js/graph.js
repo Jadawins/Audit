@@ -79,10 +79,10 @@ async function graphGetToken() {
     if (!res?.accessToken) throw new Error("Token vide");
     _token = res.accessToken;
   } catch {
-    // Silent échoué → redirect login
-    sessionStorage.clear();
+    // Silent échoué → redirect login (ne pas toucher sessionStorage, MSAL en a besoin)
     await m.loginRedirect({ scopes: GRAPH_SCOPES, prompt: "select_account" });
-    return ""; // jamais atteint, la page va se recharger
+    // La page va se recharger — on bloque ici pour éviter d'envoyer un token vide
+    await new Promise(() => {});
   }
   return _token;
 }
