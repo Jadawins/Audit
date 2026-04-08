@@ -229,7 +229,7 @@ async function readZip(f) {
       const ext = path.split(".").pop().toLowerCase();
       if (!["xml","html","htm"].includes(ext)) continue;
       const text = await entry.async("text");
-      addFile(path.split("/").pop() || path, ext === "htm" ? "html" : ext, text);
+      addFile(path, ext === "htm" ? "html" : ext, text);
     }
   } catch(e) { toast("Erreur lecture ZIP : " + e.message, "err"); }
 }
@@ -417,8 +417,8 @@ Use Markdown to format your response. Be precise and actionable.`;
 
     clearInterval(progInterval);
     document.getElementById("prog-bar").style.width = "100%";
-    _aiReport = rawResponse;
-    renderResults(rawResponse);
+    _aiReport = deanonymize(rawResponse);
+    renderResults(_aiReport);
     toast("Analyse terminée.", "ok");
 
   } catch(e) {

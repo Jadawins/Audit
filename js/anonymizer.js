@@ -125,3 +125,16 @@ function anonymize(text, opts) {
 function getAnonMap() {
   return Object.assign({}, _anonMap);
 }
+
+/**
+ * Désanonymise un texte en remplaçant les tokens par les valeurs originales.
+ * @param {string} text
+ * @returns {string}
+ */
+function deanonymize(text) {
+  const reverse = {};
+  for (const [original, tok] of Object.entries(_anonMap)) {
+    reverse[tok] = original;
+  }
+  return text.replace(/\[(SID|GUID|DN|UPN|IP|DOMAIN|USER|PC)-\d+\]/g, m => reverse[m] || m);
+}
