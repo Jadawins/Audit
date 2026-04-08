@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audit Entra ID</title>
+<title>Audit Microsoft 365</title>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.0/lib/msal-browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/auditms.css">
@@ -15,18 +14,15 @@
 
 <div class="loading-overlay" id="loading"><div class="spinner"></div><div class="loading-text" id="loading-text">Initialisation...</div></div>
 <div class="sidebar-backdrop" id="sb-backdrop" onclick="closeSidebar()"></div>
-<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModalEntra()">
-  <div class="modal"><div class="modal-head"><h3 id="modal-title"></h3><div class="modal-hr"><span class="modal-cnt" id="modal-cnt"></span><button class="modal-x" onclick="closeModalEntra()">✕</button></div></div><div class="modal-body" id="modal-body"></div></div>
-</div>
 
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="dash-login">
-    <div class="dash-login-logo">AUDIT <span style="color:var(--accent)">ENTRA ID</span></div>
+    <div class="dash-login-logo">AUDIT <span style="color:var(--accent)">MICROSOFT 365</span></div>
     <div class="dash-login-box">
-      <div class="lock-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-      <h2>Audit de sécurité Entra ID</h2>
-      <p>Connectez-vous avec un compte administrateur. Aucun identifiant ne transite par cet outil.</p>
+      <div class="lock-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+      <h2>Audit Microsoft 365</h2>
+      <p>Licences gaspillées et règles inbox suspectes. Connectez-vous avec un compte administrateur.</p>
       <div class="error-msg" id="error-msg"></div>
       <button class="btn-primary" onclick="login()">Se connecter avec Microsoft</button>
       <span style="font-size:.65rem;color:var(--text2)">Lecture seule · Microsoft Graph API</span>
@@ -59,7 +55,7 @@
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:.75rem">
         <button class="sb-toggle" onclick="openSidebar()"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-        <span class="topbar-title">Entra ID</span>
+        <span class="topbar-title">Microsoft 365</span>
       </div>
       <div class="topbar-right">
         <span style="font-size:.7rem;color:var(--text2);font-family:var(--mono)" id="topbar-date"></span>
@@ -86,66 +82,49 @@
           <span class="score-label" id="score-label">Analyse...</span>
           <p class="score-desc" id="score-desc">Connexion en cours...</p>
         </div>
-        <div class="metrics" id="home-metrics"></div>
-      </div>
-
-      <!-- Graphique MFA -->
-      <div class="charts-row">
-        <div class="chart-panel">
-          <div class="chart-title">MFA — Répartition</div>
-          <div class="chart-wrap"><canvas id="chart-mfa"></canvas></div>
-        </div>
+        <div class="metrics" id="o365-metrics"></div>
       </div>
 
       <!-- Points d'audit -->
       <div class="sh"><span class="sh-title">Points d'audit</span></div>
-      <div class="check-grid" id="home-checks"></div>
+      <div class="check-grid" id="o365-checks"></div>
 
       <!-- Recommandations -->
       <div class="sh"><span class="sh-title">Recommandations</span></div>
-      <div id="home-recos"></div>
+      <div id="o365-recos"></div>
 
-      <!-- Admins globaux -->
-      <div class="sh" style="margin-top:.5rem"><span class="sh-title">Administrateurs globaux</span></div>
+      <!-- Licences gaspillées -->
+      <div class="sh" style="margin-top:.5rem"><span class="sh-title">Licences potentiellement gaspillées</span></div>
       <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Admins globaux</span><span class="dp-count" id="cnt-admins">—</span></div>
-        <div class="filter-bar"><input class="filter-search" id="f-admins-search" placeholder="Rechercher..." oninput="filterAdminsEntra()"><span class="filter-count" id="f-admins-count"></span></div>
-        <table class="data-table"><thead><tr><th>Nom</th><th>UPN</th><th>Statut</th></tr></thead><tbody id="tbl-admins"></tbody></table>
+        <div class="dp-head"><span class="dp-title">Comptes inactifs / désactivés avec licence</span><span class="dp-count" id="cnt-wasted">—</span></div>
+        <div class="filter-bar">
+          <input class="filter-search" id="f-wasted-search" placeholder="Rechercher...">
+          <div class="filter-sep"></div>
+          <span class="ftag active" data-group="wtype" onclick="setWastedFilter('all',this)">Tous</span>
+          <span class="ftag" data-group="wtype" onclick="setWastedFilter('disabled',this)">Désactivés</span>
+          <span class="ftag" data-group="wtype" onclick="setWastedFilter('inactive',this)">Inactifs &gt;90j</span>
+          <span class="ftag" data-group="wtype" onclick="setWastedFilter('never',this)">Jamais connectés</span>
+          <span class="filter-count" id="f-wasted-count"></span>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Nom</th><th>UPN</th><th>Dernière connexion</th><th>Raison</th><th>Licences</th></tr></thead>
+          <tbody id="tbl-wasted"></tbody>
+        </table>
       </div>
 
-      <!-- Tous les utilisateurs -->
-      <div class="sh"><span class="sh-title">Utilisateurs licenciés</span></div>
+      <!-- Règles inbox suspectes -->
+      <div class="sh"><span class="sh-title">Règles inbox suspectes</span></div>
+      <div class="partial-notice" id="rules-partial-msg"></div>
       <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Tous les utilisateurs</span><span class="dp-count" id="cnt-all-users">—</span></div>
+        <div class="dp-head"><span class="dp-title">Règles suspectes détectées</span><span class="dp-count" id="cnt-rules">—</span></div>
         <div class="filter-bar">
-          <input class="filter-search" id="f-users-search" placeholder="Rechercher nom / UPN...">
-          <div class="filter-sep"></div>
-          <span class="ftag active" data-group="utype" onclick="setUserFilter('all',this)">Tous</span>
-          <span class="ftag" data-group="utype" onclick="setUserFilter('nomfa',this)">Sans MFA</span>
-          <span class="ftag" data-group="utype" onclick="setUserFilter('inactive',this)">Inactifs &gt;90j</span>
-          <span class="ftag" data-group="utype" onclick="setUserFilter('neverlogin',this)">Jamais connectés</span>
-          <div class="filter-sep"></div>
-          <span class="ftag active" id="sort-users-name" onclick="sortUsers('name',this)">↕ Nom</span>
-          <span class="ftag" id="sort-users-login" onclick="sortUsers('login',this)">↕ Connexion</span>
-          <span class="filter-count" id="f-users-count"></span>
+          <input class="filter-search" id="f-rules-search" placeholder="Rechercher utilisateur...">
+          <span class="filter-count" id="f-rules-count"></span>
         </div>
-        <table class="data-table"><thead><tr><th>Nom</th><th>UPN</th><th>Dernière connexion</th><th>MFA</th><th>Licences</th></tr></thead><tbody id="tbl-all-users"></tbody></table>
-      </div>
-
-      <!-- Conditional Access -->
-      <div class="sh"><span class="sh-title">Accès conditionnel</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Politiques CA</span><span class="dp-count" id="cnt-ca">—</span></div>
-        <div class="filter-bar">
-          <input class="filter-search" id="f-ca-search" placeholder="Rechercher une politique...">
-          <div class="filter-sep"></div>
-          <span class="ftag active" data-group="castate" onclick="setCAFilter('all',this)">Toutes</span>
-          <span class="ftag" data-group="castate" onclick="setCAFilter('enabled',this)">Activées</span>
-          <span class="ftag" data-group="castate" onclick="setCAFilter('report',this)">Rapport seul</span>
-          <span class="ftag" data-group="castate" onclick="setCAFilter('disabled',this)">Désactivées</span>
-          <span class="filter-count" id="f-ca-count"></span>
-        </div>
-        <table class="data-table"><thead><tr><th>Nom</th><th>État</th><th>Utilisateurs</th><th>Contrôles</th></tr></thead><tbody id="tbl-ca"></tbody></table>
+        <table class="data-table">
+          <thead><tr><th>Utilisateur</th><th>UPN</th><th>Règle</th><th>Actions suspectes</th></tr></thead>
+          <tbody id="tbl-rules"></tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -153,10 +132,8 @@
 
 <script src="js/utils.js"></script>
 <script src="js/graph.js"></script>
-<script src="js/audit-entra.js"></script>
+<script src="js/audit-o365.js"></script>
 <script>
-function closeModalEntra() { document.getElementById("modal-overlay").classList.remove("active"); }
-function filterAdminsEntra() { if (_entraData) _rebuildAdminsTable(_entraData); }
 function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("sb-backdrop").classList.add("active"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sb-backdrop").classList.remove("active"); }
 
@@ -177,14 +154,12 @@ async function relancer() {
 }
 async function _pageAudit() {
   try {
-    await runEntraAudit(txt => gLoading(txt));
+    await runO365Audit(txt => gLoading(txt));
     set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
     gLoaded();
   } catch(e) { gLoaded(); gShowErr(e.message); }
 }
-window.addEventListener("load", () => {
-  graphInitPage(() => _pageAudit());
-});
+window.addEventListener("load", () => graphInitPage(() => _pageAudit()));
 </script>
 </body>
 </html>

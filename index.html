@@ -3,97 +3,369 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audit Tools</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>Audit MS — Tableau de bord</title>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.0/lib/msal-browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/theme.css">
-<style>
-body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 2rem; padding: 2rem; }
-.logo { font-family: var(--mono); font-size: .72rem; letter-spacing: .25em; color: var(--text2); }
-.logo span { color: var(--accent); }
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; width: 100%; max-width: 960px; }
-.card {
-  background: var(--bg2); border: 1px solid var(--bd); border-radius: 12px;
-  padding: 1.75rem; display: flex; flex-direction: column; gap: 1rem;
-  cursor: pointer; transition: border-color .15s, background .15s;
-  text-decoration: none; color: inherit;
-}
-.card:hover { border-color: var(--bd2); background: var(--bg3); }
-.card-icon {
-  width: 44px; height: 44px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--bd2);
-}
-.card-icon svg { width: 20px; height: 20px; fill: none; stroke-width: 1.8; stroke-linecap: round; }
-.card-ms .card-icon { background: rgba(59,130,246,.1); }
-.card-ms .card-icon svg { stroke: var(--acc2); }
-.card-gpo .card-icon { background: rgba(167,139,250,.1); }
-.card-gpo .card-icon svg { stroke: var(--purple); }
-.card-intune .card-icon { background: rgba(34,197,94,.1); }
-.card-intune .card-icon svg { stroke: var(--green); }
-.card-title { font-size: 1rem; font-weight: 500; }
-.card-desc { font-size: .78rem; color: var(--text2); line-height: 1.6; }
-.card-tags { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: auto; }
-.tag {
-  background: var(--bg4); border: 1px solid var(--bd); border-radius: 4px;
-  padding: .15rem .55rem; font-size: .65rem; font-family: var(--mono); color: var(--text2);
-}
-.footer { font-size: .65rem; color: var(--text2); font-family: var(--mono); letter-spacing: .05em; }
-</style>
+<link rel="stylesheet" href="css/auditms.css">
+<link rel="stylesheet" href="css/audit-common.css">
 </head>
 <body>
 
-<div class="logo">AUDIT <span>TOOLS</span> · par William EINSARGUEIX</div>
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Initialisation...</div>
+</div>
+<div class="sidebar-backdrop" id="sb-backdrop" onclick="closeSidebar()"></div>
 
-<div class="cards">
-  <a class="card card-ms" href="entra.html">
-    <div class="card-icon">
-      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+<!-- ── ÉCRAN LOGIN ─────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="dash-login">
+    <div class="dash-login-logo">AUDIT <span style="color:var(--accent)">MS</span> · par William EINSARGUEIX</div>
+    <div class="dash-login-box">
+      <div class="lock-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <h2>Audit de sécurité Microsoft 365</h2>
+      <p>Connectez-vous avec un compte administrateur du tenant à auditer. Les données restent dans votre navigateur — aucun transfert vers un tiers.</p>
+      <div class="error-msg" id="error-msg"></div>
+      <button class="btn-primary" onclick="login()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Se connecter avec Microsoft
+      </button>
+      <span style="font-size:.65rem;color:var(--text2)">Lecture seule · Microsoft Graph API · sessionStorage uniquement</span>
     </div>
-    <div>
-      <div class="card-title">Audit Entra ID</div>
-      <div class="card-desc">Analyse de sécurité d'un tenant Microsoft 365 — MFA, accès conditionnel, utilisateurs, Secure Score.</div>
-    </div>
-    <div class="card-tags">
-      <span class="tag">Microsoft Graph</span>
-      <span class="tag">MFA</span>
-      <span class="tag">CA Policies</span>
-      <span class="tag">Secure Score</span>
-    </div>
-  </a>
-
-  <a class="card card-intune" href="intune.html">
-    <div class="card-icon">
-      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-    </div>
-    <div>
-      <div class="card-title">Audit Intune</div>
-      <div class="card-desc">Conformité des appareils managés — Windows, iOS, Android, macOS. Vue par plateforme et état de conformité.</div>
-    </div>
-    <div class="card-tags">
-      <span class="tag">Microsoft Graph</span>
-      <span class="tag">Appareils</span>
-      <span class="tag">Conformité</span>
-    </div>
-  </a>
-
-  <a class="card card-gpo" href="gpo.html">
-    <div class="card-icon">
-      <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
-    </div>
-    <div>
-      <div class="card-title">Audit GPO · Analyse IA</div>
-      <div class="card-desc">Import d'exports GPO (XML / HTML / ZIP), anonymisation automatique des données sensibles, analyse par IA.</div>
-    </div>
-    <div class="card-tags">
-      <span class="tag">XML / ZIP</span>
-      <span class="tag">Anonymisation</span>
-      <span class="tag">Claude / GPT-4</span>
-      <span class="tag">100% local</span>
-    </div>
-  </a>
+  </div>
 </div>
 
-<div class="footer">audit tools · lecture seule · aucune donnée stockée</div>
+<!-- ── APP ────────────────────────────────────────────────── -->
+<div id="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">AUDIT <span>MS</span></div>
+    <div class="sb-tenant">
+      <div class="sb-tenant-lbl">Tenant</div>
+      <div class="sb-tenant-name" id="nav-tenant-name">—</div>
+      <div class="sb-tenant-dom"  id="nav-tenant-dom">—</div>
+    </div>
+    <div class="nav-lbl">Analyse</div>
+    <div class="nav-item" data-page="index.html" onclick="location.href='index.html'">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Tableau de bord
+    </div>
+    <div class="nav-item" data-page="entra.html" onclick="location.href='entra.html'">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Entra ID
+      <span class="nav-badge" id="nb-entra-score">—</span>
+    </div>
+    <div class="nav-item" data-page="intune.html" onclick="location.href='intune.html'">
+      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      Intune
+      <span class="nav-badge" id="nb-intune-score">—</span>
+    </div>
+    <div class="nav-item" data-page="o365.html" onclick="location.href='o365.html'">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      Microsoft 365
+      <span class="nav-badge" id="nb-o365-score">—</span>
+    </div>
+    <div class="nav-item" data-page="gpo.html" onclick="location.href='gpo.html'">
+      <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+      GPO
+      <span class="nav-badge" id="nb-gpo-score">—</span>
+    </div>
+    <div class="sb-footer">
+      <div class="sb-user" id="nav-user">—</div>
+      <div style="font-size:.6rem;color:var(--text2);margin-bottom:.25rem">par William EINSARGUEIX</div>
+      <div style="display:flex;gap:.4rem">
+        <button class="btn-sm" onclick="relancer()" style="flex:1">↺ Réanalyser</button>
+        <button class="btn-sm" onclick="graphLogout()">Quitter</button>
+      </div>
+    </div>
+  </nav>
 
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <button class="sb-toggle" onclick="openSidebar()">
+          <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="topbar-title">Tableau de bord</span>
+      </div>
+      <div class="topbar-right">
+        <span style="font-size:.7rem;color:var(--text2);font-family:var(--mono)" id="topbar-date"></span>
+        <button class="btn-sm btn-accent" onclick="window.print()">⬇ PDF</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Score cards -->
+      <div class="sh" style="margin-bottom:.85rem">
+        <span class="sh-title">Scores de sécurité</span>
+        <span style="font-size:.68rem;color:var(--text2)" id="scores-status">Analyse en cours...</span>
+      </div>
+      <div class="dash-grid" id="dash-scores">
+        <!-- injecté par JS -->
+      </div>
+
+      <!-- Alertes critiques -->
+      <div class="sh">
+        <span class="sh-title">Alertes critiques</span>
+      </div>
+      <div class="dash-alerts" id="dash-alerts">
+        <div style="color:var(--text2);font-size:.78rem;padding:.5rem 0">Analyse en cours...</div>
+      </div>
+
+      <!-- Lead form (masqué tant que scores pas prêts) -->
+      <div id="lead-section" style="display:none">
+        <div class="lead-panel" id="lead-panel">
+          <div class="lead-head">
+            <h3>📊 Recevez votre rapport complet par email</h3>
+            <p>Vos scores sont prêts. Laissez vos coordonnées pour recevoir le rapport détaillé avec toutes les recommandations priorisées.</p>
+          </div>
+          <form class="lead-form" id="lead-form" onsubmit="submitLead(event)">
+            <input type="text"  name="prenom"    placeholder="Prénom *"   required>
+            <input type="text"  name="nom"       placeholder="Nom *"      required>
+            <input type="text"  name="societe"   placeholder="Société"    class="full">
+            <input type="email" name="email"     placeholder="Email *"    required>
+            <input type="tel"   name="telephone" placeholder="Téléphone">
+            <div class="lead-submit">
+              <p>Vos données ne sont pas revendues.</p>
+              <button type="submit" class="btn btn-primary" style="width:auto" id="lead-btn">
+                Recevoir le rapport
+              </button>
+            </div>
+          </form>
+          <div class="lead-success" id="lead-success">
+            <div class="ls-icon">✓</div>
+            <strong>Rapport envoyé !</strong><br>
+            <span style="font-size:.78rem;color:var(--text2)">Retrouvez ci-dessous les détails des recommandations.</span>
+          </div>
+        </div>
+
+        <!-- Recommandations complètes (visibles après envoi du lead) -->
+        <div class="full-recos" id="full-recos">
+          <div class="sh"><span class="sh-title">Recommandations détaillées</span></div>
+          <div id="full-recos-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/graph.js"></script>
+<script>
+// ── Scores collectés ───────────────────────────────────────────────────────────
+const PAGES = [
+  { key:"entra",  label:"Entra ID",     href:"entra.html",  icon:`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`,      color:"var(--acc2)" },
+  { key:"intune", label:"Intune",       href:"intune.html", icon:`<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>`, color:"var(--green)" },
+  { key:"o365",   label:"Microsoft 365",href:"o365.html",   icon:`<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>`, color:"var(--orange)" },
+  { key:"gpo",    label:"GPO",          href:"gpo.html",    icon:`<path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>`, color:"var(--purple)" }
+];
+
+let _scores = { entra: null, intune: null, o365: null, gpo: null };
+let _allAlerts = [];
+let _allRecos  = [];
+let _analysisData = {};
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+window.addEventListener("load", () => {
+  graphInitPage(acc => {
+    set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
+    _renderScoreCards(); // affiche les cartes en loading
+    _runDashboard();
+  });
+});
+
+async function login() {
+  try {
+    gShowErr(false);
+    gLoading("Connexion Microsoft...");
+    const acc = await graphLogin();
+    set("nav-user", acc.username);
+    document.getElementById("app").style.display = "block";
+    document.getElementById("login-screen").style.display = "none";
+    set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
+    gLoaded();
+    _renderScoreCards();
+    _runDashboard();
+  } catch(e) { gLoaded(); gShowErr(e.message || String(e)); }
+}
+async function relancer() {
+  try { await graphRefreshToken(); _runDashboard(); } catch(e) { gShowErr(e.message); }
+}
+
+// ── Analyse dashboard ──────────────────────────────────────────────────────────
+async function _runDashboard() {
+  set("scores-status", "Analyse en cours...");
+  _renderScoreCards();
+  _allAlerts = [];
+  _allRecos  = [];
+
+  // Lancer les 3 audits Graph en parallèle
+  const [entraRes, intuneRes, o365Res] = await Promise.allSettled([
+    _runEntra(), _runIntune(), _runO365()
+  ]);
+
+  // GPO = offline, score depuis cache si dispo
+  const gpoScore = sessionStorage.getItem("score-gpo");
+  _scores.gpo = gpoScore !== null ? parseInt(gpoScore) : null;
+
+  // Collecter alertes
+  ["entra","intune","o365"].forEach(k => {
+    const raw = sessionStorage.getItem("alerts-" + k);
+    if (raw) try { _allAlerts.push(...JSON.parse(raw)); } catch {}
+  });
+
+  set("scores-status", "Analyse terminée — " + new Date().toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit"}));
+  _renderScoreCards();
+  _renderAlerts();
+
+  // Afficher le lead form
+  document.getElementById("lead-section").style.display = "block";
+
+  // Préparer les recommandations complètes
+  _buildFullRecos();
+}
+
+async function _runEntra() {
+  try {
+    gLoading("Analyse Entra ID...");
+    const res = await runEntraAudit(txt => gLoading(txt));
+    _scores.entra = res.score;
+    _allRecos.push({ section:"Entra ID", alerts: res.alerts, href:"entra.html" });
+    _analysisData.entra = res.data;
+    gLoaded();
+  } catch(e) { gLoaded(); console.error("Entra:", e); }
+}
+async function _runIntune() {
+  try {
+    const res = await runIntuneAudit(txt => {});
+    _scores.intune = res.score;
+    _allRecos.push({ section:"Intune", alerts: res.alerts, href:"intune.html" });
+    _analysisData.intune = res.data;
+  } catch(e) { console.error("Intune:", e); }
+}
+async function _runO365() {
+  try {
+    const res = await runO365Audit(txt => {});
+    _scores.o365 = res.score;
+    _allRecos.push({ section:"Microsoft 365", alerts: res.alerts, href:"o365.html" });
+    _analysisData.o365 = res.data;
+  } catch(e) { console.error("O365:", e); }
+}
+
+// ── Render cartes de score ─────────────────────────────────────────────────────
+function _renderScoreCards() {
+  const el = document.getElementById("dash-scores"); if (!el) return;
+  el.innerHTML = PAGES.map(p => {
+    const score = _scores[p.key];
+    const cached = sessionStorage.getItem("score-" + p.key);
+    const s = score !== null ? score : (cached !== null ? parseInt(cached) : null);
+    return _scoreCard(p, s);
+  }).join("");
+}
+
+function _scoreCard(p, score) {
+  const C = 201; // 2π×32 ≈ 201 (r=32)
+  const loading = score === null;
+  const color = score===null ? "#2e3448" : score>=80 ? "#22c55e" : score>=60 ? "#f59e0b" : "#ef4444";
+  const label = score===null ? "—" : score>=80 ? "Bon" : score>=60 ? "Moyen" : score>=40 ? "Faible" : "Critique";
+  const offset = score !== null ? C - (score/100)*C : C;
+  return `<a class="score-card" href="${p.href}" title="Voir l'audit ${p.label}">
+    <div class="sc-icon" style="background:${p.color}18;border-color:${p.color}33">
+      <svg viewBox="0 0 24 24" style="stroke:${p.color}">${p.icon}</svg>
+    </div>
+    <div class="sc-title">${p.label}</div>
+    <div class="sc-score-wrap">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="32" fill="none" stroke="#1e222c" stroke-width="7"/>
+        <circle cx="40" cy="40" r="32" fill="none" stroke="${color}" stroke-width="7"
+          stroke-dasharray="${C}" stroke-dashoffset="${offset}" stroke-linecap="round"
+          style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1),stroke .5s;transform:rotate(-90deg);transform-origin:center"/>
+      </svg>
+      <div class="sc-score-center">
+        <span class="sc-score-num" style="color:${color}">${score !== null ? score : "—"}</span>
+        <span class="sc-score-denom">/100</span>
+      </div>
+    </div>
+    <span class="sc-label" style="color:${color};background:${color}18">${loading ? "Analyse..." : label}</span>
+  </a>`;
+}
+
+// ── Render alertes ─────────────────────────────────────────────────────────────
+function _renderAlerts() {
+  const el = document.getElementById("dash-alerts"); if (!el) return;
+  if (_allAlerts.length === 0) {
+    el.innerHTML = `<div class="dash-no-alerts">✓ Aucune alerte critique détectée sur les modules analysés.</div>`;
+    return;
+  }
+  el.innerHTML = _allAlerts.map(a =>
+    `<div class="dash-alert ${a.lvl}"><span class="da-icon">${a.lvl==="red"?"🔴":"🟡"}</span>${a.msg}</div>`
+  ).join("");
+}
+
+// ── Recommandations complètes (après lead) ─────────────────────────────────────
+function _buildFullRecos() {
+  const content = _allRecos.map(r => {
+    if (!r.alerts || r.alerts.length === 0) return "";
+    return `<div style="margin-bottom:1rem">
+      <div class="sh"><span class="sh-title">${r.section}</span><a class="sh-link" href="${r.href}">Voir le détail →</a></div>
+      ${r.alerts.map(a => `<div class="reco${a.lvl==="red"?" crit":"'}"><h4>⚠ ${a.msg}</h4><p>Consultez la page <a href="${r.href}" style="color:var(--acc2)">${r.section}</a> pour les détails et recommandations.</p></div>`).join("")}
+    </div>`;
+  }).join("");
+
+  const el = document.getElementById("full-recos-content");
+  if (el) el.innerHTML = content || `<div class="reco ok"><h4>✓ Aucune anomalie critique détectée</h4><p>Consultez chaque page d'audit pour le détail complet.</p></div>`;
+}
+
+// ── Lead form ──────────────────────────────────────────────────────────────────
+async function submitLead(e) {
+  e.preventDefault();
+  const btn  = document.getElementById("lead-btn");
+  const form = document.getElementById("lead-form");
+  btn.disabled = true; btn.textContent = "Envoi...";
+
+  const fd = new FormData(form);
+  const scores = {};
+  PAGES.forEach(p => { if (_scores[p.key] !== null) scores[p.label] = _scores[p.key]; });
+
+  try {
+    const r = await fetch("https://auditms.fr/api/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prenom:    fd.get("prenom"),
+        nom:       fd.get("nom"),
+        societe:   fd.get("societe"),
+        email:     fd.get("email"),
+        telephone: fd.get("telephone"),
+        scores
+      })
+    });
+    if (!r.ok) throw new Error("Erreur serveur");
+    form.style.display = "none";
+    document.getElementById("lead-success").style.display = "block";
+    // Révéler les recommandations complètes
+    const fr = document.getElementById("full-recos");
+    if (fr) fr.classList.add("visible");
+  } catch(err) {
+    btn.disabled = false; btn.textContent = "Recevoir le rapport";
+    // En cas d'erreur serveur, on affiche quand même les recommandations
+    form.style.display = "none";
+    document.getElementById("lead-success").style.display = "block";
+    const fr = document.getElementById("full-recos");
+    if (fr) fr.classList.add("visible");
+  }
+}
+
+// ── Sidebar mobile ─────────────────────────────────────────────────────────────
+function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("sb-backdrop").classList.add("active"); }
+function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sb-backdrop").classList.remove("active"); }
+</script>
+
+<!-- Les modules d'audit sont chargés APRÈS graph.js -->
+<script src="js/audit-entra.js"></script>
+<script src="js/audit-intune.js"></script>
+<script src="js/audit-o365.js"></script>
 </body>
 </html>

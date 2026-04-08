@@ -1,0 +1,15 @@
+{
+  "name": "auditms-api",
+  "version": "1.0.0",
+  "description": "API leads + deploy webhook pour auditms.fr",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "pm2": "pm2 start server.js --name auditms-api"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.7",
+    "cors": "^2.8.5"
+  }
+}

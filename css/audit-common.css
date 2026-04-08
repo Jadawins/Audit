@@ -1,0 +1,190 @@
+/* =========================================================
+   AUDIT-COMMON.CSS — Styles communs aux nouvelles pages
+   Dashboard, lead form, score cards, mobile sidebar
+   Dépend de : css/theme.css, css/auditms.css
+   ========================================================= */
+
+/* ── Sidebar mobile toggle ────────────────────────────────── */
+.sb-toggle {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); padding: .3rem;
+}
+.sb-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+@media (max-width: 768px) {
+  .sb-toggle { display: flex; }
+  .sidebar {
+    transform: translateX(-100%); transition: transform .2s;
+    z-index: 50;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0 !important; }
+  .sidebar-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 49;
+  }
+  .sidebar-backdrop.active { display: block; }
+}
+
+/* ── Reco critique (rouge) ────────────────────────────────── */
+.reco.crit { border-left-color: var(--red); }
+.reco.crit h4 { color: var(--red); }
+
+/* ── DASHBOARD — Score cards ──────────────────────────────── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.score-card {
+  background: var(--bg2); border: 1px solid var(--bd); border-radius: 11px;
+  padding: 1.5rem 1.25rem; display: flex; flex-direction: column;
+  align-items: center; gap: .75rem;
+  cursor: pointer; transition: border-color .15s, background .15s; text-decoration: none;
+  color: inherit; position: relative; overflow: hidden;
+}
+.score-card:hover { border-color: var(--bd2); background: var(--bg3); }
+.score-card.loading .sc-score-wrap::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity:.3 } 50% { opacity:.8 } }
+
+.sc-icon {
+  width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--bd2);
+  display: flex; align-items: center; justify-content: center; margin-bottom: .25rem;
+}
+.sc-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.sc-title { font-size: .75rem; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
+
+.sc-score-wrap { position: relative; width: 80px; height: 80px; }
+.sc-score-wrap svg { transform: rotate(-90deg); }
+.sc-score-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.sc-score-num   { font-family: var(--mono); font-size: 1.4rem; font-weight: 500; line-height: 1; }
+.sc-score-denom { font-size: .6rem; color: var(--text2); font-family: var(--mono); }
+
+.sc-label {
+  font-size: .7rem; font-weight: 500;
+  padding: .2rem .65rem; border-radius: 99px;
+}
+.sc-loading { font-family: var(--mono); font-size: .7rem; color: var(--text2); }
+
+/* ── Alertes dashboard ────────────────────────────────────── */
+.dash-alerts { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.25rem; }
+.dash-alert {
+  display: flex; align-items: center; gap: .65rem;
+  background: var(--bg2); border: 1px solid var(--bd);
+  border-left-width: 2px; border-radius: 7px; padding: .6rem 1rem;
+  font-size: .78rem;
+}
+.dash-alert.red    { border-left-color: var(--red);    color: var(--text3); }
+.dash-alert.orange { border-left-color: var(--orange); color: var(--text3); }
+.dash-alert .da-icon { font-size: .85rem; flex-shrink: 0; }
+.dash-no-alerts {
+  background: rgba(34,197,94,.07); border: 1px solid rgba(34,197,94,.2);
+  border-radius: 7px; padding: .7rem 1rem; font-size: .78rem; color: var(--green);
+}
+
+/* ── Formulaire lead ──────────────────────────────────────── */
+.lead-panel {
+  background: var(--bg2); border: 1px solid var(--bd2); border-radius: 12px;
+  padding: 1.75rem; margin-bottom: 1.5rem;
+  animation: slideIn .3s ease;
+}
+@keyframes slideIn { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:none } }
+.lead-head { margin-bottom: 1.25rem; }
+.lead-head h3 { font-size: 1rem; font-weight: 500; margin-bottom: .35rem; }
+.lead-head p  { font-size: .78rem; color: var(--text2); line-height: 1.6; }
+.lead-form { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+@media (max-width: 560px) { .lead-form { grid-template-columns: 1fr; } }
+.lead-form input {
+  background: var(--bg3); border: 1px solid var(--bd); border-radius: 7px;
+  padding: .55rem .85rem; font-size: .82rem; color: var(--text); font-family: var(--sans);
+  outline: none; transition: border-color .12s; width: 100%;
+}
+.lead-form input:focus { border-color: var(--accent); }
+.lead-form input::placeholder { color: var(--text2); }
+.lead-form .full { grid-column: 1 / -1; }
+.lead-submit {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+  margin-top: .25rem;
+}
+.lead-submit p { font-size: .68rem; color: var(--text2); }
+
+.lead-success {
+  display: none; text-align: center; padding: 1rem 0;
+  color: var(--green); font-size: .85rem;
+}
+.lead-success .ls-icon { font-size: 2rem; margin-bottom: .5rem; }
+
+/* ── Recommandations complètes (après lead) ───────────────── */
+.full-recos { display: none; margin-top: 1.5rem; }
+.full-recos.visible { display: block; animation: slideIn .3s ease; }
+
+/* ── Écran login dashboard ────────────────────────────────── */
+.dash-login {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 70vh; gap: 1.5rem; text-align: center;
+}
+.dash-login-logo { font-family: var(--mono); font-size: .72rem; letter-spacing: .2em; color: var(--text2); }
+.dash-login-box {
+  background: var(--bg2); border: 1px solid var(--bd2); border-radius: 12px;
+  padding: 2.5rem 2rem; max-width: 400px; width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 1.25rem;
+}
+.dash-login-box h2 { font-size: 1.2rem; font-weight: 500; }
+.dash-login-box p  { font-size: .8rem; color: var(--text2); line-height: 1.6; text-align: center; }
+
+/* ── Bouton primaire login (alias) ────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: var(--accent); color: #fff; border: none;
+  padding: .65rem 1.5rem; border-radius: 8px;
+  font-size: .85rem; font-weight: 500; cursor: pointer;
+  font-family: var(--sans); transition: opacity .15s; width: 100%;
+}
+.btn-primary:hover { opacity: .85; }
+
+/* ── Section heading avec lien ────────────────────────────── */
+.sh-link {
+  font-size: .7rem; color: var(--acc2); cursor: pointer;
+  text-decoration: none; transition: color .12s;
+}
+.sh-link:hover { color: var(--text); }
+
+/* ── Partial scan notice ──────────────────────────────────── */
+.partial-notice {
+  display: none;
+  background: rgba(59,130,246,.06); border: 1px solid rgba(59,130,246,.2);
+  border-radius: 7px; padding: .65rem 1rem; font-size: .75rem; color: var(--acc2);
+  margin-bottom: .75rem; line-height: 1.6;
+}
+
+/* ── Icônes sécurité GPO ──────────────────────────────────── */
+.gpo-sec-icon { font-size: .9rem; }
+.gpo-legend {
+  display: flex; flex-wrap: wrap; gap: .65rem;
+  font-size: .68rem; color: var(--text2); padding: .65rem 1.1rem;
+  border-top: 1px solid var(--bd);
+}
+.gpo-legend span { display: flex; align-items: center; gap: .25rem; }
+
+/* ── Barre de progression import GPO ─────────────────────── */
+.import-bar {
+  background: var(--bg2); border: 1px solid var(--bd); border-radius: 9px;
+  padding: 1.25rem; text-align: center; margin-bottom: 1rem;
+}
+.import-bar .ib-icon { font-size: 2rem; margin-bottom: .5rem; }
+.import-bar h3 { font-size: .9rem; font-weight: 500; margin-bottom: .3rem; }
+.import-bar p  { font-size: .75rem; color: var(--text2); line-height: 1.6; }
+.import-bar .ib-cmd {
+  background: var(--bg4); border: 1px solid var(--bd); border-radius: 6px;
+  padding: .5rem .85rem; font-family: var(--mono); font-size: .72rem;
+  color: var(--acc2); display: inline-block; margin-top: .65rem; text-align: left;
+  white-space: pre-wrap; word-break: break-all;
+}
+.import-actions { display: flex; gap: .75rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap; }

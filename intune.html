@@ -8,69 +8,58 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/auditms.css">
+<link rel="stylesheet" href="css/audit-common.css">
 </head>
 <body>
 
-<div class="loading-overlay" id="loading">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Initialisation...</div>
-</div>
-
+<div class="loading-overlay" id="loading"><div class="spinner"></div><div class="loading-text" id="loading-text">Initialisation...</div></div>
+<div class="sidebar-backdrop" id="sb-backdrop" onclick="closeSidebar()"></div>
 <div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal">
-    <div class="modal-head">
-      <h3 id="modal-title"></h3>
-      <div class="modal-hr">
-        <span class="modal-cnt" id="modal-cnt"></span>
-        <button class="modal-x" onclick="closeModal()">✕</button>
-      </div>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
+  <div class="modal"><div class="modal-head"><h3 id="modal-title"></h3><div class="modal-hr"><span class="modal-cnt" id="modal-cnt"></span><button class="modal-x" onclick="closeModal()">✕</button></div></div><div class="modal-body" id="modal-body"></div></div>
 </div>
 
 <!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-logo">AUDIT INTUNE</div>
-  <div class="login-box">
-    <div class="lock-icon">
-      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  <div class="dash-login">
+    <div class="dash-login-logo">AUDIT <span style="color:var(--accent)">INTUNE</span></div>
+    <div class="dash-login-box">
+      <div class="lock-icon"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+      <h2>Audit de conformité Intune</h2>
+      <p>Connectez-vous avec un compte administrateur. Aucun identifiant ne transite par cet outil.</p>
+      <div class="error-msg" id="error-msg"></div>
+      <button class="btn-primary" onclick="login()">Se connecter avec Microsoft</button>
+      <span style="font-size:.65rem;color:var(--text2)">Lecture seule · Microsoft Graph API</span>
     </div>
-    <h2>Audit de conformité Intune</h2>
-    <p>Connectez-vous avec un compte administrateur du tenant à auditer. Aucun identifiant ne transite par cet outil.</p>
-    <div class="error-msg" id="error-msg"></div>
-    <button class="btn-primary" onclick="login()">Se connecter avec Microsoft</button>
-    <span style="font-size:.68rem;color:var(--text2)">Lecture seule · Microsoft Graph API</span>
   </div>
 </div>
 
 <!-- APP -->
 <div id="app">
-  <nav class="sidebar">
-    <div class="sb-logo">AUDIT INTUNE</div>
-    <div class="sb-tenant">
-      <div class="sb-tenant-lbl">Tenant audité</div>
-      <div class="sb-tenant-name" id="nav-tenant-name">—</div>
-      <div class="sb-tenant-dom" id="nav-tenant-dom">—</div>
-    </div>
-    <div class="nav-lbl">Navigation</div>
-    <div class="nav-item" onclick="location.href='entra.html'">
-      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      Entra ID ↗
-    </div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">AUDIT <span>MS</span></div>
+    <div class="sb-tenant"><div class="sb-tenant-lbl">Tenant</div><div class="sb-tenant-name" id="nav-tenant-name">—</div><div class="sb-tenant-dom" id="nav-tenant-dom">—</div></div>
+    <div class="nav-lbl">Analyse</div>
+    <div class="nav-item" data-page="index.html"  onclick="location.href='index.html'"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Tableau de bord</div>
+    <div class="nav-item" data-page="entra.html"  onclick="location.href='entra.html'"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Entra ID<span class="nav-badge" id="nb-entra-score">—</span></div>
+    <div class="nav-item" data-page="intune.html" onclick="location.href='intune.html'"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Intune<span class="nav-badge" id="nb-intune-score">—</span></div>
+    <div class="nav-item" data-page="o365.html"   onclick="location.href='o365.html'"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Microsoft 365<span class="nav-badge" id="nb-o365-score">—</span></div>
+    <div class="nav-item" data-page="gpo.html"    onclick="location.href='gpo.html'"><svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>GPO<span class="nav-badge" id="nb-gpo-score">—</span></div>
     <div class="sb-footer">
       <div class="sb-user" id="nav-user">—</div>
       <div style="font-size:.6rem;color:var(--text2);margin-bottom:.25rem">par William EINSARGUEIX</div>
       <div style="display:flex;gap:.4rem">
         <button class="btn-sm" onclick="relancer()" style="flex:1">↺ Réanalyser</button>
-        <button class="btn-sm" onclick="logout()">Quitter</button>
+        <button class="btn-sm" onclick="graphLogout()">Quitter</button>
       </div>
     </div>
   </nav>
 
   <div class="main">
     <div class="topbar">
-      <span class="topbar-title">Intune — Conformité des appareils</span>
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <button class="sb-toggle" onclick="openSidebar()"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <span class="topbar-title">Intune — Conformité</span>
+      </div>
       <div class="topbar-right">
         <span style="font-size:.7rem;color:var(--text2);font-family:var(--mono)" id="topbar-date"></span>
         <button class="btn-sm btn-accent" onclick="window.print()">⬇ PDF</button>
@@ -78,208 +67,92 @@
     </div>
 
     <div class="content">
-      <div class="view active" id="view-intune">
-        <div class="metrics" id="intune-metrics"></div>
-        <div id="intune-platforms"></div>
-        <div class="data-panel">
-          <div class="dp-head"><span class="dp-title">Appareils</span><span class="dp-count" id="cnt-nc">—</span></div>
-          <div class="filter-bar">
-            <input class="filter-search" id="f-dev-search" placeholder="Rechercher appareil / utilisateur..." oninput="filterDevices()">
-            <div class="filter-sep"></div>
-            <span class="ftag active" data-group="compliance" onclick="setDevFilter('compliance','all',this)">Tous</span>
-            <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','compliant',this)">Conformes</span>
-            <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','noncompliant',this)">Non conformes</span>
-            <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','unknown',this)">Inconnus</span>
-            <div class="filter-sep"></div>
-            <span class="ftag active" id="f-dev-os-all" data-group="os" onclick="setDevFilter('os','all',this)">Toutes plateformes</span>
-            <span class="filter-count" id="f-dev-count"></span>
+      <!-- Score + métriques -->
+      <div class="home-top">
+        <div class="score-panel">
+          <div class="score-ring">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#1e222c" stroke-width="9"/>
+              <circle id="score-circle" cx="60" cy="60" r="50" fill="none" stroke="#3b82f6" stroke-width="9"
+                stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"
+                style="transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1),stroke .5s"/>
+            </svg>
+            <div class="score-center">
+              <span class="score-num" id="score-num">—</span>
+              <span class="score-denom">/100</span>
+            </div>
           </div>
-          <table class="data-table"><thead><tr><th>Appareil</th><th>Utilisateur</th><th>Plateforme</th><th>Version OS</th><th>Conformité</th><th>Dernière synchro</th></tr></thead><tbody id="tbl-nc"></tbody></table>
+          <span class="score-label" id="score-label">Analyse...</span>
+          <p class="score-desc" id="score-desc">Connexion en cours...</p>
         </div>
+        <div class="metrics" id="intune-metrics"></div>
+      </div>
+
+      <!-- Points d'audit -->
+      <div class="sh"><span class="sh-title">Points d'audit</span></div>
+      <div class="check-grid" id="intune-checks"></div>
+
+      <!-- Recommandations -->
+      <div class="sh"><span class="sh-title">Recommandations</span></div>
+      <div id="intune-recos"></div>
+
+      <!-- Plateformes -->
+      <div class="sh" style="margin-top:.5rem"><span class="sh-title">Par plateforme</span></div>
+      <div id="intune-platforms"></div>
+
+      <!-- Appareils -->
+      <div class="data-panel">
+        <div class="dp-head"><span class="dp-title">Appareils</span><span class="dp-count" id="cnt-nc">—</span></div>
+        <div class="filter-bar" id="view-devices">
+          <input class="filter-search" id="f-dev-search" placeholder="Rechercher appareil / utilisateur..." oninput="_filterDevicesRender ? _filterDevicesRender() : null">
+          <div class="filter-sep"></div>
+          <span class="ftag active" data-group="compliance" onclick="setDevFilter('compliance','all',this)">Tous</span>
+          <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','compliant',this)">Conformes</span>
+          <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','noncompliant',this)">Non conformes</span>
+          <span class="ftag" data-group="compliance" onclick="setDevFilter('compliance','unknown',this)">Inconnus</span>
+          <div class="filter-sep"></div>
+          <span class="ftag active" id="f-dev-os-all" data-group="os" onclick="setDevFilter('os','all',this)">Toutes plateformes</span>
+          <span class="filter-count" id="f-dev-count"></span>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Appareil</th><th>Utilisateur</th><th>Plateforme</th><th>Version OS</th><th>Conformité</th><th>Chiffré</th><th>Dernière synchro</th></tr></thead>
+          <tbody id="tbl-nc"></tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
 
 <script src="js/utils.js"></script>
+<script src="js/graph.js"></script>
+<script src="js/audit-intune.js"></script>
 <script>
-const CLIENT_ID = "bd7f8225-61af-4ac0-bc6c-aaccd6a22fac";
-const msalConfig = { auth: { clientId: CLIENT_ID, authority: "https://login.microsoftonline.com/common", redirectUri: "https://auditms.fr/intune.html" }, cache: { cacheLocation: "sessionStorage" } };
-const scopes = ["Organization.Read.All","DeviceManagementManagedDevices.Read.All"];
+function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("sb-backdrop").classList.add("active"); }
+function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sb-backdrop").classList.remove("active"); }
 
-let _msal = null, _token = null, _data = {};
-let _df = { compliance:"all", os:"all" };
-
-function getMsal() { if (!_msal) _msal = new msal.PublicClientApplication(msalConfig); return _msal; }
 async function login() {
   try {
-    showErr(false);
-    const m = getMsal();
-    const r = await m.loginPopup({ scopes });
-    m.setActiveAccount(r.account);
-    _token = (await m.acquireTokenSilent({ scopes, account: r.account })).accessToken;
-    set("nav-user", r.account.username);
-    await runAudit();
-  } catch(e) { showErr(e.message || String(e)); }
+    gShowErr(false); gLoading("Connexion...");
+    const acc = await graphLogin();
+    set("nav-user", acc.username);
+    document.getElementById("app").style.display = "block";
+    document.getElementById("login-screen").style.display = "none";
+    gLoaded();
+    await _pageAudit();
+  } catch(e) { gLoaded(); gShowErr(e.message || String(e)); }
 }
-async function logout() { getMsal().logoutPopup(); location.reload(); }
 async function relancer() {
-  try {
-    const m = getMsal(), acc = m.getActiveAccount();
-    if (!acc) { location.reload(); return; }
-    _token = (await m.acquireTokenSilent({ scopes, account: acc })).accessToken;
-    await runAudit();
-  } catch(e) { location.reload(); }
+  try { gLoading("Réanalyse..."); await graphRefreshToken(); await _pageAudit(); }
+  catch(e) { gLoaded(); gShowErr(e.message); }
 }
-function showErr(msg) { const el = document.getElementById("error-msg"); el.style.display = msg ? "block" : "none"; el.textContent = msg || ""; }
-function loading(txt) { document.getElementById("loading").classList.add("active"); document.getElementById("loading-text").textContent = txt || "Chargement..."; }
-function loaded() { document.getElementById("loading").classList.remove("active"); }
-
-async function gGet(url) {
-  const base = url.startsWith("http") ? "" : "https://graph.microsoft.com/v1.0";
-  const r = await fetch(base + url, { headers: { Authorization: "Bearer " + _token, ConsistencyLevel: "eventual" } });
-  if (!r.ok) { if (r.status === 403) return null; throw new Error("Graph " + r.status); }
-  return r.json();
-}
-
-async function runAudit() {
-  loading("Récupération des informations du tenant...");
-  document.getElementById("login-screen").style.display = "none";
-  document.getElementById("app").style.display = "block";
-
+async function _pageAudit() {
   try {
-    const org = await gGet("/organization");
-    const tenant = org?.value?.[0];
-
-    set("nav-tenant-name", tenant?.displayName || "—");
-    set("nav-tenant-dom", tenant?.verifiedDomains?.find(d => d.isDefault)?.name || "—");
+    await runIntuneAudit(txt => gLoading(txt));
     set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
-
-    loading("Appareils Intune...");
-    const devRaw = await gGet("/deviceManagement/managedDevices?$select=id,deviceName,operatingSystem,complianceState,userDisplayName,userPrincipalName,lastSyncDateTime,osVersion&$top=999");
-    const devices = devRaw?.value || null;
-
-    loaded();
-
-    _data = { tenant, devices };
-    renderIntune();
-  } catch(e) {
-    loaded(); showErr("Erreur : " + e.message);
-    document.getElementById("login-screen").style.display = "flex";
-    document.getElementById("app").style.display = "none";
-  }
+    gLoaded();
+  } catch(e) { gLoaded(); gShowErr(e.message); }
 }
-
-function renderIntune() {
-  const { devices } = _data;
-  if (!devices) {
-    document.getElementById("intune-metrics").innerHTML = '<div class="metric"><div class="metric-lbl">Intune</div><div class="metric-val" style="font-size:1rem;color:var(--text2)">Non configuré</div></div>';
-    document.getElementById("intune-platforms").innerHTML = '<div class="data-panel" style="padding:1.25rem;text-align:center;color:var(--text2);font-size:.78rem">Intune non configuré ou permissions insuffisantes sur ce tenant.</div>';
-    set("cnt-nc", "0");
-    return;
-  }
-  const compliant = devices.filter(d => d.complianceState==="compliant");
-  const nonCompliant = devices.filter(d => d.complianceState==="noncompliant");
-  const unknown = devices.filter(d => d.complianceState!=="compliant"&&d.complianceState!=="noncompliant");
-
-  document.getElementById("intune-metrics").innerHTML = [
-    { lbl:"Total appareils", val:devices.length, sub:"", cls:"blue" },
-    { lbl:"Conformes", val:compliant.length, sub:"", cls:"green" },
-    { lbl:"Non conformes", val:nonCompliant.length, sub:"", cls:nonCompliant.length===0?"green":"red" },
-    { lbl:"Inconnus", val:unknown.length, sub:"", cls:unknown.length===0?"green":"orange" }
-  ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div></div>`).join("");
-
-  const platforms = {};
-  const icons = { Windows:"🖥", iOS:"📱", Android:"📱", macOS:"💻" };
-  devices.forEach(d => {
-    const os = d.operatingSystem||"Autre";
-    if (!platforms[os]) platforms[os] = { all:[], c:[], nc:[], u:[] };
-    platforms[os].all.push(d);
-    if (d.complianceState==="compliant") platforms[os].c.push(d);
-    else if (d.complianceState==="noncompliant") platforms[os].nc.push(d);
-    else platforms[os].u.push(d);
-  });
-  _data.byPlatform = platforms;
-
-  document.getElementById("intune-platforms").innerHTML = `<div class="platform-grid">${
-    Object.entries(platforms).map(([os, d]) => `
-      <div class="platform-card" onclick="showPlatformModal('${os}')">
-        <div class="pc-top"><span class="pc-os">${icons[os]||"💾"} ${os}</span><span class="pc-total">${d.all.length}</span></div>
-        <div class="pc-stats">
-          <div class="pc-stat"><span>Conformes</span><span style="color:var(--green)">${d.c.length}</span></div>
-          <div class="pc-stat"><span>Non conformes</span><span style="color:${d.nc.length>0?"var(--red)":"var(--green)"}">${d.nc.length}</span></div>
-          ${d.u.length>0?`<div class="pc-stat"><span>Inconnus</span><span style="color:var(--orange)">${d.u.length}</span></div>`:""}
-        </div>
-      </div>`
-    ).join("")}
-  </div>`;
-
-  set("cnt-nc", devices.length+" total");
-
-  const devIcons = { Windows:"🖥", iOS:"📱", Android:"📱", macOS:"💻" };
-  const osTags = Object.keys(platforms).map(os =>
-    `<span class="ftag" data-group="os" onclick="setDevFilter('os','${os}',this)">${devIcons[os]||"💾"} ${os}</span>`
-  ).join("");
-  const filterBar = document.querySelector("#view-intune .filter-bar");
-  if (filterBar) {
-    const existing = filterBar.querySelector("#f-os-tags");
-    if (!existing) {
-      const sep = document.createElement("div"); sep.className="filter-sep";
-      const wrap = document.createElement("span"); wrap.id="f-os-tags"; wrap.innerHTML = osTags;
-      filterBar.insertBefore(sep, filterBar.querySelector(".filter-count"));
-      filterBar.insertBefore(wrap, filterBar.querySelector(".filter-count"));
-    }
-  }
-  _df = { compliance:"all", os:"all" };
-  filterDevices();
-}
-
-function showPlatformModal(os) {
-  const d = _data.byPlatform?.[os]; if (!d) return;
-  document.getElementById("modal-title").textContent = os+" — Tous les appareils";
-  document.getElementById("modal-cnt").textContent = d.all.length+" appareil(s)";
-  document.getElementById("modal-body").innerHTML = d.all.map(dev => `
-    <div class="modal-row">
-      <div class="mr-main"><div class="mr-name">${dev.deviceName||"—"}</div><div class="mr-sub">${dev.userPrincipalName||dev.userDisplayName||"—"}</div></div>
-      <div style="display:flex;align-items:center;gap:.6rem">
-        <span class="mr-meta">${dev.osVersion||""}</span>
-        <span class="pill pill-${dev.complianceState==="compliant"?"green":dev.complianceState==="noncompliant"?"red":"orange"}"><span class="pill-dot"></span>${dev.complianceState==="compliant"?"Conforme":dev.complianceState==="noncompliant"?"Non conforme":"Inconnu"}</span>
-      </div>
-    </div>`).join("");
-  document.getElementById("modal-overlay").classList.add("active");
-}
-
-function closeModal() { document.getElementById("modal-overlay").classList.remove("active"); }
-
-function setDevFilter(type, val, el) {
-  _df[type] = val;
-  el.closest(".filter-bar").querySelectorAll(`.ftag[data-group='${type}']`).forEach(t => t.classList.remove("active"));
-  el.classList.add("active");
-  filterDevices();
-}
-
-function filterDevices() {
-  const { devices } = _data;
-  if (!devices) return;
-  const q = (document.getElementById("f-dev-search")?.value || "").toLowerCase();
-  let devs = devices.filter(d => {
-    if (q && !d.deviceName?.toLowerCase().includes(q) && !d.userDisplayName?.toLowerCase().includes(q) && !d.userPrincipalName?.toLowerCase().includes(q)) return false;
-    if (_df.compliance !== "all") {
-      if (_df.compliance === "compliant" && d.complianceState !== "compliant") return false;
-      if (_df.compliance === "noncompliant" && d.complianceState !== "noncompliant") return false;
-      if (_df.compliance === "unknown" && (d.complianceState === "compliant" || d.complianceState === "noncompliant")) return false;
-    }
-    if (_df.os !== "all" && d.operatingSystem !== _df.os) return false;
-    return true;
-  });
-  set("cnt-nc", devices.length+" total");
-  set("f-dev-count", devs.length+" résultat(s)");
-  document.getElementById("tbl-nc").innerHTML = devs.map(d => {
-    const cs = d.complianceState==="compliant"?"green":d.complianceState==="noncompliant"?"red":"orange";
-    const cl = d.complianceState==="compliant"?"Conforme":d.complianceState==="noncompliant"?"Non conforme":"Inconnu";
-    return `<tr><td>${d.deviceName||"—"}</td><td>${d.userDisplayName||"—"}</td><td>${d.operatingSystem||"—"}</td><td class="mono">${d.osVersion||"—"}</td><td><span class="pill pill-${cs}"><span class="pill-dot"></span>${cl}</span></td><td class="mono">${d.lastSyncDateTime?new Date(d.lastSyncDateTime).toLocaleDateString("fr-FR"):"Jamais"}</td></tr>`;
-  }).join("") || '<tr><td colspan="6" class="empty">Aucun résultat</td></tr>';
-}
+window.addEventListener("load", () => graphInitPage(() => _pageAudit()));
 </script>
 </body>
 </html>
