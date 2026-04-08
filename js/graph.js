@@ -35,7 +35,7 @@ function _getMsal() {
 // ── Auth ──────────────────────────────────────────────────────────────────────
 async function graphLogin() {
   const m = _getMsal();
-  const r = await m.loginPopup({ scopes: GRAPH_SCOPES });
+  const r = await m.loginPopup({ scopes: GRAPH_SCOPES, prompt: "select_account" });
   m.setActiveAccount(r.account);
   _token = (await m.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: r.account })).accessToken;
 
