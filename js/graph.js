@@ -24,7 +24,7 @@ function _getMsal() {
       auth: {
         clientId:    GRAPH_CLIENT_ID,
         authority:   "https://login.microsoftonline.com/common",
-        redirectUri: window.location.origin + window.location.pathname
+        redirectUri: window.location.origin + "/blank.html"
       },
       cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: false }
     });
