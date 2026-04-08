@@ -8,6 +8,7 @@ const GRAPH_CLIENT_ID = "bd7f8225-61af-4ac0-bc6c-aaccd6a22fac";
 const GRAPH_SCOPES = [
   "User.Read.All","Directory.Read.All","Policy.Read.All",
   "AuditLog.Read.All","Organization.Read.All","RoleManagement.Read.All",
+  "MailboxSettings.Read",
   "UserAuthenticationMethod.Read.All","SecurityEvents.Read.All",
   "DeviceManagementManagedDevices.Read.All","DeviceManagementConfiguration.Read.All",
   "MailboxSettings.Read","Mail.ReadBasic"
