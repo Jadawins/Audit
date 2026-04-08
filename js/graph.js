@@ -8,7 +8,6 @@ const GRAPH_CLIENT_ID = "bd7f8225-61af-4ac0-bc6c-aaccd6a22fac";
 const GRAPH_SCOPES = [
   "User.Read.All","Directory.Read.All","Policy.Read.All",
   "AuditLog.Read.All","Organization.Read.All","RoleManagement.Read.All",
-  "MailboxSettings.Read",
   "UserAuthenticationMethod.Read.All","SecurityEvents.Read.All",
   "DeviceManagementManagedDevices.Read.All","DeviceManagementConfiguration.Read.All",
   "MailboxSettings.Read","Mail.ReadBasic"
@@ -68,7 +67,15 @@ async function graphGetToken() {
   const acc = m.getActiveAccount() || m.getAllAccounts()[0];
   if (!acc) throw new Error("Non authentifié — veuillez vous connecter.");
   m.setActiveAccount(acc);
-  _token = (await m.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: acc })).accessToken;
+  try {
+    const res = await m.acquireTokenSilent({ scopes: GRAPH_SCOPES, account: acc });
+    if (!res.accessToken) throw new Error("Token vide");
+    _token = res.accessToken;
+  } catch {
+    // Token silencieux échoué → popup
+    const res = await m.acquireTokenPopup({ scopes: GRAPH_SCOPES, account: acc });
+    _token = res.accessToken;
+  }
   return _token;
 }
 
