@@ -112,18 +112,32 @@
         </table>
       </div>
 
-      <!-- Règles inbox suspectes -->
-      <div class="sh"><span class="sh-title">Règles inbox suspectes</span></div>
-      <div class="partial-notice" id="rules-partial-msg"></div>
+      <!-- Forwarding SMTP externe -->
+      <div class="sh"><span class="sh-title">Forwarding SMTP externe</span></div>
       <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Règles suspectes détectées</span><span class="dp-count" id="cnt-rules">—</span></div>
+        <div class="dp-head"><span class="dp-title">Boîtes avec redirection externe</span><span class="dp-count" id="cnt-forwarding">—</span></div>
+        <table class="data-table">
+          <thead><tr><th>Nom</th><th>UPN</th><th>Redirigé vers</th><th>Type</th></tr></thead>
+          <tbody id="tbl-forwarding"></tbody>
+        </table>
+      </div>
+
+      <!-- Apps OAuth tierces -->
+      <div class="sh"><span class="sh-title">Applications OAuth tierces sensibles</span></div>
+      <div class="data-panel">
+        <div class="dp-head"><span class="dp-title">Apps avec accès sensibles consentis</span><span class="dp-count" id="cnt-oauth">—</span></div>
         <div class="filter-bar">
-          <input class="filter-search" id="f-rules-search" placeholder="Rechercher utilisateur...">
-          <span class="filter-count" id="f-rules-count"></span>
+          <input class="filter-search" id="f-oauth-search" placeholder="Rechercher une app...">
+          <div class="filter-sep"></div>
+          <span class="ftag active" data-group="otype" onclick="setOAuthFilter('all',this)">Toutes</span>
+          <span class="ftag" data-group="otype" onclick="setOAuthFilter('red',this)">Critiques</span>
+          <span class="ftag" data-group="otype" onclick="setOAuthFilter('orange',this)">Attention</span>
+          <span class="ftag" data-group="otype" onclick="setOAuthFilter('admin',this)">Consentement admin</span>
+          <span class="filter-count" id="f-oauth-count"></span>
         </div>
         <table class="data-table">
-          <thead><tr><th>Utilisateur</th><th>UPN</th><th>Règle</th><th>Actions suspectes</th></tr></thead>
-          <tbody id="tbl-rules"></tbody>
+          <thead><tr><th>Application</th><th>Éditeur</th><th>Consentement</th><th>Scopes sensibles</th><th>Risque</th></tr></thead>
+          <tbody id="tbl-oauth"></tbody>
         </table>
       </div>
     </div>

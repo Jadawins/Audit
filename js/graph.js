@@ -10,7 +10,8 @@ const GRAPH_SCOPES = [
   "AuditLog.Read.All","Organization.Read.All","RoleManagement.Read.All",
   "UserAuthenticationMethod.Read.All","SecurityEvents.Read.All",
   "DeviceManagementManagedDevices.Read.All","DeviceManagementConfiguration.Read.All",
-  "MailboxSettings.Read","Mail.ReadBasic"
+  "MailboxSettings.Read","Mail.ReadBasic",
+  "DelegatedPermissionGrant.ReadWrite.All"
 ];
 
 let _msalInst = null;
