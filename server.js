@@ -11,6 +11,7 @@ const path       = require("path");
 const https      = require("https");
 const { execSync } = require("child_process");
 const rateLimit  = require("express-rate-limit");
+const { LeadSchema, InboxRulesSchema } = require("./validation");
 
 const app  = express();
 const PORT = 3001;
@@ -116,8 +117,9 @@ app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
   try {
     if (!CLIENT_SECRET) return res.status(503).json({ error: "Client secret non configuré" });
 
-    const { tenantId, users } = req.body;
-    if (!tenantId || !Array.isArray(users)) return res.status(400).json({ error: "tenantId et users requis" });
+    const parsed = InboxRulesSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Données invalides", details: parsed.error.flatten() });
+    const { tenantId, users } = parsed.data;
 
     const token   = await _getAppToken(tenantId);
     const results = [];
@@ -160,8 +162,9 @@ app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
 // ── POST /api/lead ─────────────────────────────────────────────────────────────
 app.post("/api/lead", leadLimiter, async (req, res) => {
   try {
-    const { prenom, nom, societe, email, telephone, scores } = req.body;
-    if (!email || !prenom) return res.status(400).json({ error: "Champs requis manquants" });
+    const parsed = LeadSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Données invalides", details: parsed.error.flatten() });
+    const { prenom, nom, societe, email, telephone, scores } = parsed.data;
 
     // 1. Append dans leads.json
     const lead = {
