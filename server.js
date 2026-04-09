@@ -13,6 +13,7 @@ const rateLimit  = require("express-rate-limit");
 const { LeadSchema, InboxRulesSchema } = require("./validation");
 const logger     = require("./logger");
 const { saveLead } = require("./db");
+const metrics    = require("./metrics");
 
 const app  = express();
 const PORT = 3001;
@@ -138,6 +139,15 @@ app.get("/healthz", (req, res) => {
   res.json({ status: "ok", uptime: process.uptime(), ts: new Date().toISOString() });
 });
 
+// ── GET /metrics ───────────────────────────────────────────────────────────────
+app.get("/metrics", (req, res) => {
+  const token = req.headers["x-metrics-token"];
+  if (process.env.METRICS_TOKEN && token !== process.env.METRICS_TOKEN) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  res.json(metrics.get());
+});
+
 // ── POST /api/inbox-rules ──────────────────────────────────────────────────────
 app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
   try {
@@ -178,8 +188,10 @@ app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
       } catch {}
     }
 
+    metrics.inc("graph_calls");
     res.json({ results });
   } catch (e) {
+    metrics.inc("graph_errors");
     logger.error({ err: e.message }, "inbox-rules error");
     res.status(500).json({ error: e.message });
   }
@@ -229,13 +241,15 @@ app.post("/api/lead", leadLimiter, async (req, res) => {
           ].join("\n")
         });
       } catch (mailErr) {
+        metrics.inc("email_errors");
         logger.error({ err: mailErr.message }, "Email error");
-        // Ne pas faire échouer la requête si l'email plante
       }
     }
 
+    metrics.inc("lead_total");
     res.json({ success: true });
   } catch (e) {
+    metrics.inc("lead_errors");
     logger.error({ err: e.message }, "Lead error");
     res.status(500).json({ error: e.message });
   }
@@ -248,11 +262,22 @@ app.post("/api/deploy", (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    execSync(`cd ${APP_DIR} && git pull origin main && npm install --omit=dev 2>&1`, { timeout: 60000 });
+    execSync(`cd ${APP_DIR} && git pull origin main && npm install --omit=dev && node scripts/inject-hashes.js 2>&1`, { timeout: 60000 });
     res.json({ success: true, message: "Deployed" });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// ── 404 ────────────────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ error: "Route inconnue" });
+});
+
+// ── Erreur globale ─────────────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  logger.error({ err: err.message, method: req.method, path: req.path }, "Unhandled error");
+  res.status(err.status || 500).json({ error: process.env.NODE_ENV === "production" ? "Erreur interne" : err.message });
 });
 
 app.listen(PORT, () => logger.info(`Audit API on port ${PORT}`));

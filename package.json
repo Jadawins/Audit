@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "node scripts/inject-hashes.js",
     "pm2": "pm2 start server.js --name auditms-api"
   },
   "dependencies": {
