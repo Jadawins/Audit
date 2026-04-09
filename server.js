@@ -118,6 +118,11 @@ async function _graphGet(token, path) {
   });
 }
 
+// ── GET /healthz ───────────────────────────────────────────────────────────────
+app.get("/healthz", (req, res) => {
+  res.json({ status: "ok", uptime: process.uptime(), ts: new Date().toISOString() });
+});
+
 // ── POST /api/inbox-rules ──────────────────────────────────────────────────────
 app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
   try {
