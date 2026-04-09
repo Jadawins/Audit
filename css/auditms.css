@@ -26,50 +26,37 @@
 .login-box h2 { font-size: 1.2rem; font-weight: 500; }
 .login-box p  { font-size: .8rem; color: var(--text2); line-height: 1.6; text-align: center; }
 
-/* ── SECTION INFO LOGIN ──────────────────────────────────── */
-#login-screen { justify-content: flex-start; padding-top: 3rem; padding-bottom: 3rem; }
+/* ── ÉCRAN LOGIN — BÉNÉFICES ─────────────────────────────── */
+#login-screen { justify-content: center; }
 
-.login-info {
-  width: 100%; max-width: 600px;
-  display: flex; flex-direction: column; gap: .75rem;
-  text-align: left;
+.login-benefits {
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column; gap: .6rem;
 }
-.li-block {
-  background: var(--bg2); border: 1px solid var(--bd); border-radius: 10px;
-  padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: .75rem;
+.lb-card {
+  display: flex; align-items: flex-start; gap: 1rem;
+  background: var(--bg2); border: 1px solid var(--bd);
+  border-radius: 10px; padding: .9rem 1.1rem;
 }
-.li-title {
-  font-size: .65rem; text-transform: uppercase; letter-spacing: .1em;
-  color: var(--text2); font-weight: 500;
+.lb-icon {
+  width: 36px; height: 36px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
 }
-.li-desc { font-size: .8rem; color: var(--text3); line-height: 1.6; }
+.lb-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+.lb-text { display: flex; flex-direction: column; gap: .25rem; }
+.lb-title { font-size: .82rem; font-weight: 500; }
+.lb-desc  { font-size: .75rem; color: var(--text2); line-height: 1.55; }
 
-.li-modules { display: flex; flex-wrap: wrap; gap: .5rem; }
-.li-mod {
-  display: inline-flex; align-items: center; gap: .35rem;
-  font-size: .75rem; font-weight: 500;
-  background: var(--bg4); border: 1px solid var(--bd);
-  border-radius: 6px; padding: .3rem .7rem;
+.login-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; max-width: 520px;
+  font-size: .72rem; color: var(--text2); gap: 1rem; flex-wrap: wrap;
 }
-.li-mod svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
-
-.li-rows { display: flex; flex-direction: column; gap: .45rem; }
-.li-row {
-  display: flex; align-items: flex-start; gap: .6rem;
-  font-size: .8rem; color: var(--text3); line-height: 1.5;
+.login-details-link {
+  color: var(--acc2); text-decoration: none; white-space: nowrap;
+  font-size: .72rem; transition: color .12s;
 }
-.li-row svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; flex-shrink: 0; margin-top: .15rem; }
-.li-ok   svg { color: var(--green); }
-.li-no   svg { color: var(--red); }
-.li-warn svg { color: var(--orange); stroke-width: 2; }
-.li-row code { font-family: var(--mono); font-size: .72rem; background: var(--bg4); border: 1px solid var(--bd); border-radius: 3px; padding: .05rem .35rem; color: var(--acc2); }
-
-.li-perms { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--bd); border-radius: 7px; overflow: hidden; }
-.li-perm { display: flex; align-items: baseline; gap: .75rem; padding: .5rem .85rem; border-bottom: 1px solid var(--bd); }
-.li-perm:last-child { border-bottom: none; }
-.li-perm:hover { background: var(--bg3); }
-.li-perm-name { font-family: var(--mono); font-size: .7rem; color: var(--acc2); white-space: nowrap; flex-shrink: 0; }
-.li-perm-desc { font-size: .75rem; color: var(--text2); }
+.login-details-link:hover { color: var(--text); }
 
 /* ── APP ─────────────────────────────────────────────────── */
 #app { display: none; min-height: 100vh; }

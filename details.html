@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit MS — Détails techniques</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<style>
+  body { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  .details-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .details-logo { font-family: var(--mono); font-size: .72rem; letter-spacing: .18em; color: var(--text2); }
+  .details-logo span { color: var(--accent); }
+  .details-back {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .78rem; color: var(--acc2); text-decoration: none; transition: color .12s;
+  }
+  .details-back:hover { color: var(--text); }
+  .details-back svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+
+  h1 { font-size: 1.4rem; font-weight: 500; margin-bottom: .5rem; }
+  .details-intro { font-size: .85rem; color: var(--text2); line-height: 1.7; margin-bottom: 2rem; }
+
+  .section { margin-bottom: 2rem; }
+  .section-title {
+    font-size: .62rem; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--text2); font-weight: 500; margin-bottom: .85rem;
+    padding-bottom: .5rem; border-bottom: 1px solid var(--bd);
+  }
+
+  /* Blocs info */
+  .info-block {
+    background: var(--bg2); border: 1px solid var(--bd); border-radius: 10px;
+    padding: 1.1rem 1.25rem; margin-bottom: .75rem;
+  }
+  .info-block p { font-size: .82rem; color: var(--text3); line-height: 1.7; }
+
+  /* Lignes check */
+  .check-list { display: flex; flex-direction: column; gap: .5rem; }
+  .check-row {
+    display: flex; align-items: flex-start; gap: .7rem;
+    font-size: .82rem; color: var(--text3); line-height: 1.55;
+  }
+  .check-row svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; flex-shrink: 0; margin-top: .15rem; }
+  .check-ok   svg { color: var(--green); }
+  .check-no   svg { color: var(--red); }
+  .check-warn svg { color: var(--orange); stroke-width: 2; }
+  .check-row code { font-family: var(--mono); font-size: .72rem; background: var(--bg4); border: 1px solid var(--bd); border-radius: 3px; padding: .05rem .35rem; color: var(--acc2); }
+
+  /* Rôles */
+  .role-card {
+    background: var(--bg2); border: 1px solid var(--bd); border-radius: 10px;
+    padding: 1rem 1.25rem; margin-bottom: .6rem;
+    display: flex; align-items: flex-start; gap: .85rem;
+  }
+  .role-badge {
+    background: rgba(59,130,246,.1); color: var(--acc2);
+    border: 1px solid rgba(59,130,246,.2); border-radius: 5px;
+    font-family: var(--mono); font-size: .68rem; padding: .2rem .55rem;
+    white-space: nowrap; flex-shrink: 0; margin-top: .1rem;
+  }
+  .role-info { display: flex; flex-direction: column; gap: .3rem; }
+  .role-name { font-size: .85rem; font-weight: 500; }
+  .role-desc { font-size: .78rem; color: var(--text2); line-height: 1.55; }
+
+  /* Permissions */
+  .perm-table {
+    border: 1px solid var(--bd); border-radius: 9px; overflow: hidden;
+  }
+  .perm-row {
+    display: flex; align-items: baseline; gap: 1rem;
+    padding: .6rem 1rem; border-bottom: 1px solid var(--bd);
+  }
+  .perm-row:last-child { border-bottom: none; }
+  .perm-row:hover { background: var(--bg3); }
+  .perm-name { font-family: var(--mono); font-size: .72rem; color: var(--acc2); flex-shrink: 0; min-width: 290px; }
+  .perm-desc { font-size: .78rem; color: var(--text2); line-height: 1.5; }
+
+  /* Modules */
+  .modules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .75rem; }
+  .module-card {
+    background: var(--bg2); border: 1px solid var(--bd); border-radius: 10px;
+    padding: 1rem 1.1rem;
+  }
+  .module-header { display: flex; align-items: center; gap: .5rem; margin-bottom: .5rem; }
+  .module-header svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; }
+  .module-name { font-size: .82rem; font-weight: 500; }
+  .module-checks { font-size: .75rem; color: var(--text2); line-height: 1.7; }
+
+  @media (max-width: 600px) {
+    .perm-row { flex-direction: column; gap: .2rem; }
+    .perm-name { min-width: unset; }
+  }
+</style>
+</head>
+<body>
+
+<div class="details-header">
+  <div class="details-logo">AUDIT <span>MS</span> · par William EINSARGUEIX</div>
+  <a href="index.html" class="details-back">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    Retour à la connexion
+  </a>
+</div>
+
+<h1>Détails techniques</h1>
+<p class="details-intro">Cette page explique en détail comment fonctionne Audit MS, quelles données sont accédées, quels rôles sont nécessaires et quelles permissions Microsoft Graph sont demandées lors de la connexion.</p>
+
+<!-- ── COMMENT ÇA FONCTIONNE ── -->
+<div class="section">
+  <div class="section-title">Comment ça fonctionne</div>
+  <div class="info-block">
+    <p>Audit MS utilise l'API Microsoft Graph pour interroger votre tenant Microsoft 365 en lecture seule. L'authentification est gérée par Microsoft directement via OAuth 2.0 — vos identifiants ne transitent jamais par nos serveurs.</p>
+    <p style="margin-top:.75rem">L'analyse est entièrement effectuée dans votre navigateur. Les résultats sont stockés en <code>sessionStorage</code> et effacés automatiquement à la fermeture de l'onglet.</p>
+  </div>
+
+  <div class="modules-grid">
+    <div class="module-card">
+      <div class="module-header" style="color:var(--acc2)">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="module-name">Entra ID</span>
+      </div>
+      <div class="module-checks">Taux MFA · Accès conditionnel · Admins globaux · Comptes inactifs · Secure Score</div>
+    </div>
+    <div class="module-card">
+      <div class="module-header" style="color:var(--green)">
+        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        <span class="module-name">Intune</span>
+      </div>
+      <div class="module-checks">Conformité appareils · Chiffrement · Versions OS · Politiques PIN</div>
+    </div>
+    <div class="module-card">
+      <div class="module-header" style="color:var(--orange)">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span class="module-name">Microsoft 365</span>
+      </div>
+      <div class="module-checks">Licences inutilisées · Apps OAuth · Règles inbox suspectes · Admins avec boîte mail</div>
+    </div>
+    <div class="module-card">
+      <div class="module-header" style="color:var(--purple)">
+        <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+        <span class="module-name">GPO</span>
+      </div>
+      <div class="module-checks">Analyse hors-ligne · Import XML · GPOs orphelines · Paramètres sécurité</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VOS DONNÉES ── -->
+<div class="section">
+  <div class="section-title">Vos données</div>
+  <div class="info-block">
+    <div class="check-list">
+      <div class="check-row check-ok">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Toutes les données restent dans votre navigateur (<code>sessionStorage</code>) et sont effacées à la fermeture de l'onglet</span>
+      </div>
+      <div class="check-row check-ok">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>L'authentification est gérée par Microsoft — vos identifiants ne nous sont jamais transmis</span>
+      </div>
+      <div class="check-row check-ok">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>Accès en lecture seule uniquement — aucune modification n'est effectuée sur votre tenant</span>
+      </div>
+      <div class="check-row check-no">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>Vos utilisateurs, appareils, emails ou stratégies ne sont jamais envoyés ni stockés sur nos serveurs</span>
+      </div>
+      <div class="check-row check-no">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <span>Aucun cookie de tracking, aucune télémétrie, aucun tiers analytique</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RÔLES REQUIS ── -->
+<div class="section">
+  <div class="section-title">Rôles requis sur le tenant</div>
+
+  <div class="role-card">
+    <div class="role-badge">Recommandé</div>
+    <div class="role-info">
+      <div class="role-name">Administrateur général <span style="color:var(--text2);font-size:.78rem;font-weight:400">(Global Administrator)</span></div>
+      <div class="role-desc">Accès complet à tous les modules. Peut approuver les permissions Graph pour l'ensemble du tenant lors de la première connexion.</div>
+    </div>
+  </div>
+
+  <div class="role-card">
+    <div class="role-badge">Alternatif</div>
+    <div class="role-info">
+      <div class="role-name">Lecteur général + Administrateur Intune <span style="color:var(--text2);font-size:.78rem;font-weight:400">(Global Reader + Intune Administrator)</span></div>
+      <div class="role-desc">Permet d'accéder aux modules Entra ID, Intune et Microsoft 365. Certaines données peuvent être partiellement restreintes selon la configuration du tenant.</div>
+    </div>
+  </div>
+
+  <div class="info-block" style="margin-top:.75rem">
+    <div class="check-list">
+      <div class="check-row check-warn">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Les modules pour lesquels le compte n'a pas les droits suffisants afficheront <strong>N/A</strong> au lieu d'un score. L'outil reste utilisable partiellement.</span>
+      </div>
+      <div class="check-row check-warn">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Lors de la première connexion, Microsoft demandera un consentement administrateur pour les permissions ci-dessous. Ce consentement peut être accordé une fois pour tous les utilisateurs du tenant.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PERMISSIONS GRAPH ── -->
+<div class="section">
+  <div class="section-title">Permissions Microsoft Graph demandées</div>
+  <div class="info-block" style="margin-bottom:.75rem">
+    <p>Ces permissions sont demandées lors de la connexion OAuth. Elles sont toutes en <strong>lecture seule</strong> — aucune ne permet de modifier des données sur votre tenant.</p>
+  </div>
+  <div class="perm-table">
+    <div class="perm-row"><span class="perm-name">User.Read.All</span><span class="perm-desc">Lire la liste de tous les utilisateurs et leurs attributs (nom, email, date de dernière connexion)</span></div>
+    <div class="perm-row"><span class="perm-name">Directory.Read.All</span><span class="perm-desc">Lire l'annuaire Azure AD complet (groupes, unités organisationnelles)</span></div>
+    <div class="perm-row"><span class="perm-name">Policy.Read.All</span><span class="perm-desc">Lire les politiques d'accès conditionnel (Conditional Access)</span></div>
+    <div class="perm-row"><span class="perm-name">AuditLog.Read.All</span><span class="perm-desc">Lire les journaux de connexion et d'audit (utilisé pour détecter les comptes inactifs)</span></div>
+    <div class="perm-row"><span class="perm-name">Organization.Read.All</span><span class="perm-desc">Lire les informations du tenant (nom, domaines vérifiés, identifiant)</span></div>
+    <div class="perm-row"><span class="perm-name">RoleManagement.Read.All</span><span class="perm-desc">Lire les rôles d'administration et leurs membres (ex : liste des Global Admins)</span></div>
+    <div class="perm-row"><span class="perm-name">UserAuthenticationMethod.Read.All</span><span class="perm-desc">Lire les méthodes d'authentification enregistrées (MFA, FIDO2, authenticator app)</span></div>
+    <div class="perm-row"><span class="perm-name">SecurityEvents.Read.All</span><span class="perm-desc">Lire le Microsoft Secure Score et les recommandations de sécurité</span></div>
+    <div class="perm-row"><span class="perm-name">DeviceManagementManagedDevices.Read.All</span><span class="perm-desc">Lire les appareils gérés par Intune (conformité, chiffrement, OS)</span></div>
+    <div class="perm-row"><span class="perm-name">DeviceManagementConfiguration.Read.All</span><span class="perm-desc">Lire les politiques de configuration et de conformité Intune</span></div>
+    <div class="perm-row"><span class="perm-name">MailboxSettings.Read</span><span class="perm-desc">Lire les paramètres des boîtes mail (fuseau horaire, langue, délégations)</span></div>
+    <div class="perm-row"><span class="perm-name">Mail.ReadBasic</span><span class="perm-desc">Lire les règles de boîte de réception (détection de règles suspectes de transfert)</span></div>
+    <div class="perm-row"><span class="perm-name">DelegatedPermissionGrant.ReadWrite.All</span><span class="perm-desc">Lire les applications OAuth tierces ayant un accès délégué sur le tenant</span></div>
+  </div>
+</div>
+
+</body>
+</html>
