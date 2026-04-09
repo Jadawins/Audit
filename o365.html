@@ -40,7 +40,6 @@
     <div class="nav-item" data-page="entra.html"  onclick="location.href='entra.html'"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Entra ID<span class="nav-badge" id="nb-entra-score">—</span></div>
     <div class="nav-item" data-page="intune.html" onclick="location.href='intune.html'"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Intune<span class="nav-badge" id="nb-intune-score">—</span></div>
     <div class="nav-item" data-page="o365.html"   onclick="location.href='o365.html'"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Microsoft 365<span class="nav-badge" id="nb-o365-score">—</span></div>
-    <div class="nav-item" data-page="gpo.html"    onclick="location.href='gpo.html'"><svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>GPO<span class="nav-badge" id="nb-gpo-score">—</span></div>
     <div class="sb-footer">
       <div class="sb-user" id="nav-user">—</div>
       <div style="font-size:.6rem;color:var(--text2);margin-bottom:.25rem">par William EINSARGUEIX</div>
@@ -64,6 +63,7 @@
     </div>
 
     <div class="content">
+      <div id="lead-low-score-banner"></div>
       <!-- Score + métriques -->
       <div class="home-top">
         <div class="score-panel">
@@ -89,67 +89,8 @@
       <div class="sh"><span class="sh-title">Points d'audit</span></div>
       <div class="check-grid" id="o365-checks"></div>
 
-      <!-- Recommandations -->
-      <div class="sh"><span class="sh-title">Recommandations</span></div>
-      <div id="o365-recos"></div>
-
-      <!-- Licences gaspillées -->
-      <div class="sh" style="margin-top:.5rem"><span class="sh-title">Licences potentiellement gaspillées</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Comptes inactifs / désactivés avec licence</span><span class="dp-count" id="cnt-wasted">—</span></div>
-        <div class="filter-bar">
-          <input class="filter-search" id="f-wasted-search" placeholder="Rechercher...">
-          <div class="filter-sep"></div>
-          <span class="ftag active" data-group="wtype" onclick="setWastedFilter('all',this)">Tous</span>
-          <span class="ftag" data-group="wtype" onclick="setWastedFilter('disabled',this)">Désactivés</span>
-          <span class="ftag" data-group="wtype" onclick="setWastedFilter('inactive',this)">Inactifs &gt;90j</span>
-          <span class="ftag" data-group="wtype" onclick="setWastedFilter('never',this)">Jamais connectés</span>
-          <span class="filter-count" id="f-wasted-count"></span>
-        </div>
-        <table class="data-table">
-          <thead><tr><th>Nom</th><th>UPN</th><th>Dernière connexion</th><th>Raison</th><th>Licences</th></tr></thead>
-          <tbody id="tbl-wasted"></tbody>
-        </table>
-      </div>
-
-      <!-- Admins globaux sans compte dédié -->
-      <div class="sh"><span class="sh-title">Administrateurs globaux sans compte dédié</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Admins avec boîte mail active</span><span class="dp-count" id="cnt-admins-o365">—</span></div>
-        <table class="data-table">
-          <thead><tr><th>Nom</th><th>UPN</th><th>Statut</th></tr></thead>
-          <tbody id="tbl-admins-o365"></tbody>
-        </table>
-      </div>
-
-      <!-- Règles inbox suspectes (admins) -->
-      <div class="sh"><span class="sh-title">Règles inbox suspectes — Admins globaux</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Règles suspectes sur les admins</span><span class="dp-count" id="cnt-inbox-rules">—</span></div>
-        <table class="data-table">
-          <thead><tr><th>Nom</th><th>UPN</th><th>Règle</th><th>Actions suspectes</th></tr></thead>
-          <tbody id="tbl-inbox-rules"></tbody>
-        </table>
-      </div>
-
-      <!-- Apps OAuth tierces -->
-      <div class="sh"><span class="sh-title">Applications OAuth tierces sensibles</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Apps avec accès sensibles consentis</span><span class="dp-count" id="cnt-oauth">—</span></div>
-        <div class="filter-bar">
-          <input class="filter-search" id="f-oauth-search" placeholder="Rechercher une app...">
-          <div class="filter-sep"></div>
-          <span class="ftag active" data-group="otype" onclick="setOAuthFilter('all',this)">Toutes</span>
-          <span class="ftag" data-group="otype" onclick="setOAuthFilter('red',this)">Critiques</span>
-          <span class="ftag" data-group="otype" onclick="setOAuthFilter('orange',this)">Attention</span>
-          <span class="ftag" data-group="otype" onclick="setOAuthFilter('admin',this)">Consentement admin</span>
-          <span class="filter-count" id="f-oauth-count"></span>
-        </div>
-        <table class="data-table">
-          <thead><tr><th>Application</th><th>Éditeur</th><th>Consentement</th><th>Scopes sensibles</th><th>Risque</th></tr></thead>
-          <tbody id="tbl-oauth"></tbody>
-        </table>
-      </div>
+      <div id="lead-alarm-banner"></div>
+      <div id="lead-cta"></div>
     </div>
   </div>
 </div>
@@ -157,6 +98,7 @@
 <script src="js/utils.js"></script>
 <script src="js/graph.js"></script>
 <script src="js/audit-o365.js"></script>
+<script src="js/lead-form.js"></script>
 <script>
 function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("sb-backdrop").classList.add("active"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sb-backdrop").classList.remove("active"); }
@@ -178,8 +120,20 @@ async function relancer() {
 }
 async function _pageAudit() {
   try {
-    await runO365Audit(txt => gLoading(txt));
+    const result = await runO365Audit(txt => gLoading(txt));
     set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
+    const d = result.data;
+    initLeadForm({
+      score:   result.score,
+      alerts:  result.alerts,
+      module:  "Microsoft 365",
+      details: {
+        wastedLicenses:    (d.wastedLicenses    || []).map(u => ({ name: u.displayName, upn: u.userPrincipalName, reason: u.reason })),
+        inboxRules:        (d.inboxRules         || []).map(r => ({ name: r.displayName, upn: r.upn, rule: r.ruleName, flags: r.flags })),
+        riskyOAuthApps:    (d.riskyOAuthApps     || []).map(a => ({ app: a.appName, publisher: a.publisher, risk: a.risk, scopes: a.scopes })),
+        adminsWithMailbox: (d.adminsWithMailbox   || []).map(a => ({ name: a.displayName, upn: a.userPrincipalName }))
+      }
+    });
     gLoaded();
   } catch(e) { gLoaded(); gShowErr(e.message); }
 }

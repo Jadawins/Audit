@@ -202,11 +202,11 @@ app.post("/api/lead", leadLimiter, async (req, res) => {
   try {
     const parsed = LeadSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Données invalides", details: parsed.error.flatten() });
-    const { prenom, nom, societe, email, telephone, scores } = parsed.data;
+    const { prenom, nom, societe, email, telephone, commentaire, scores, alerts, details } = parsed.data;
 
     // 1. Sauvegarde en base MongoDB
     const lead = {
-      prenom, nom, societe, email, telephone, scores,
+      prenom, nom, societe, email, telephone, commentaire, scores, alerts,
       ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress
     };
     await saveLead(lead);
@@ -219,26 +219,72 @@ app.post("/api/lead", leadLimiter, async (req, res) => {
           auth: { user: SMTP_USER, pass: SMTP_PASS },
           tls:  { rejectUnauthorized: false }
         });
+
+        // Formatage scores
+        const scoreEmoji = s => s >= 80 ? "✓" : s >= 60 ? "~" : "⚠";
         const scoresText = scores
-          ? Object.entries(scores).map(([k, v]) => `${k}: ${v}/100`).join("\n")
-          : "Non calculés";
+          ? Object.entries(scores).map(([k, v]) => `  ${k.padEnd(16)}: ${v}/100 ${scoreEmoji(v)}`).join("\n")
+          : "  Non calculés";
+
+        // Formatage alertes
+        const alertsText = alerts && alerts.length
+          ? alerts.map(a => `  ${a.lvl === "red" ? "🔴" : "🟡"} ${a.msg}`).join("\n")
+          : "  Aucune alerte";
+
+        // Détails techniques complets
+        let detailsText = "";
+        if (details) {
+          const lines = ["\n\n═══════════════════════════════", "DÉTAILS TECHNIQUES (confidentiel)", "═══════════════════════════════"];
+          if (details.noMfaUsers?.length)
+            lines.push(`\nSans MFA (${details.noMfaUsers.length}) :`, ...details.noMfaUsers.map(u => `  - ${u.name} <${u.upn}>`));
+          if (details.weakMfaUsers?.length)
+            lines.push(`\nMFA faible (${details.weakMfaUsers.length}) :`, ...details.weakMfaUsers.map(u => `  - ${u.name} <${u.upn}>`));
+          if (details.inactiveUsers?.length)
+            lines.push(`\nComptes inactifs >90j (${details.inactiveUsers.length}) :`, ...details.inactiveUsers.map(u => `  - ${u.name} <${u.upn}>`));
+          if (details.globalAdmins?.length)
+            lines.push(`\nAdmins globaux (${details.globalAdmins.length}) :`, ...details.globalAdmins.map(u => `  - ${u.name} <${u.upn}>`));
+          if (details.nonCompliant?.length)
+            lines.push(`\nAppareils non conformes (${details.nonCompliant.length}) :`, ...details.nonCompliant.map(d => `  - ${d.name} — ${d.user} (${d.os})`));
+          if (details.wastedLicenses?.length)
+            lines.push(`\nLicences gaspillées (${details.wastedLicenses.length}) :`, ...details.wastedLicenses.map(u => `  - ${u.name} <${u.upn}> — ${u.reason}`));
+          if (details.inboxRules?.length)
+            lines.push(`\nRègles inbox suspectes (${details.inboxRules.length}) :`, ...details.inboxRules.map(r => `  - ${r.name} <${r.upn}> : ${r.rule} → ${(r.flags || []).join(", ")}`));
+          if (details.riskyOAuthApps?.length)
+            lines.push(`\nApps OAuth à risque (${details.riskyOAuthApps.length}) :`, ...details.riskyOAuthApps.map(a => `  - ${a.app} (${a.publisher}) — ${a.risk?.toUpperCase()} — ${(a.scopes || []).join(", ")}`));
+          if (details.adminsWithMailbox?.length)
+            lines.push(`\nAdmins sans compte dédié (${details.adminsWithMailbox.length}) :`, ...details.adminsWithMailbox.map(a => `  - ${a.name} <${a.upn}>`));
+          detailsText = lines.join("\n");
+        }
+
         await transporter.sendMail({
           from:    `"Audit MS" <${SMTP_USER}>`,
           to:      LEAD_DEST,
-          subject: `🎯 Nouveau lead — ${prenom} ${nom} (${societe || "?"})`,
-          text:    [
-            `Nouveau lead Audit MS`,
+          subject: `🎯 Lead — ${prenom} ${nom}${societe ? " (" + societe + ")" : ""}`,
+          text: [
+            `NOUVEAU LEAD — AuditMS`,
+            `═══════════════════════════════`,
             ``,
-            `Nom       : ${prenom} ${nom}`,
+            `CONTACT`,
+            `───────`,
+            `Prénom    : ${prenom} ${nom}`,
             `Société   : ${societe || "—"}`,
             `Email     : ${email}`,
             `Téléphone : ${telephone || "—"}`,
+            commentaire ? `Message   : ${commentaire}` : null,
             ``,
-            `Scores :`,
+            `SCORES`,
+            `──────`,
             scoresText,
             ``,
-            `Date : ${lead.date}`
-          ].join("\n")
+            `ALERTES`,
+            `───────`,
+            alertsText,
+            detailsText,
+            ``,
+            `───────`,
+            `Date : ${new Date().toISOString()}`,
+            `IP   : ${lead.ip}`
+          ].filter(l => l !== null).join("\n")
         });
       } catch (mailErr) {
         metrics.inc("email_errors");

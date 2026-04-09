@@ -173,6 +173,52 @@
 }
 .gpo-legend span { display: flex; align-items: center; gap: .25rem; }
 
+/* ── Alarm banner ─────────────────────────────────────────── */
+.alarm-banner {
+  border-radius: 8px; padding: .85rem 1.1rem; margin-bottom: 1.1rem;
+  border: 1px solid; border-left-width: 3px;
+}
+.alarm-orange { background: rgba(245,158,11,.06); border-color: rgba(245,158,11,.2); border-left-color: var(--orange); }
+.alarm-red    { background: rgba(239,68,68,.06);  border-color: rgba(239,68,68,.2);  border-left-color: var(--red); }
+.alarm-text   { font-size: .82rem; color: var(--text); margin-bottom: .5rem; line-height: 1.6; }
+.alarm-list   { list-style: none; display: flex; flex-direction: column; gap: .3rem; margin: 0; padding: 0; }
+.alarm-item   { display: flex; align-items: center; gap: .5rem; font-size: .78rem; color: var(--text3); }
+.alarm-dot    { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.alarm-dot-red    { background: var(--red); }
+.alarm-dot-orange { background: var(--orange); }
+
+/* ── Score critique (bannière rouge) ──────────────────────── */
+.low-score-banner {
+  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3);
+  border-radius: 7px; padding: .7rem 1.1rem; font-size: .8rem;
+  color: var(--red); margin-bottom: 1.1rem; line-height: 1.5;
+}
+#lead-low-score-banner { display: none; }
+
+/* ── CTA flottant ─────────────────────────────────────────── */
+#lead-cta { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 20; }
+.lead-cta-btn {
+  display: inline-flex; align-items: center; gap: .5rem;
+  background: var(--accent); color: #fff; border: none;
+  padding: .7rem 1.4rem; border-radius: 9px;
+  font-size: .85rem; font-weight: 500; cursor: pointer;
+  font-family: var(--sans); box-shadow: 0 4px 16px rgba(59,130,246,.35);
+  transition: opacity .15s, transform .15s;
+}
+.lead-cta-btn:hover   { opacity: .9; transform: translateY(-1px); }
+.lead-cta-urgent      { background: var(--red); box-shadow: 0 4px 16px rgba(239,68,68,.35); animation: pulse-cta 2s ease-in-out infinite; }
+@keyframes pulse-cta  { 0%,100% { box-shadow: 0 4px 16px rgba(239,68,68,.35); } 50% { box-shadow: 0 4px 24px rgba(239,68,68,.6); } }
+.lead-cta-icon        { font-size: 1rem; }
+
+/* ── Inputs lead modal ────────────────────────────────────── */
+.lead-form-input {
+  background: var(--bg3); border: 1px solid var(--bd); border-radius: 7px;
+  padding: .55rem .85rem; font-size: .82rem; color: var(--text); font-family: var(--sans);
+  outline: none; transition: border-color .12s; width: 100%;
+}
+.lead-form-input:focus       { border-color: var(--accent); }
+.lead-form-input::placeholder { color: var(--text2); }
+
 /* ── Barre de progression import GPO ─────────────────────── */
 .import-bar {
   background: var(--bg2); border: 1px solid var(--bd); border-radius: 9px;

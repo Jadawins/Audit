@@ -44,7 +44,6 @@
     <div class="nav-item" data-page="entra.html"  onclick="location.href='entra.html'"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Entra ID<span class="nav-badge" id="nb-entra-score">—</span></div>
     <div class="nav-item" data-page="intune.html" onclick="location.href='intune.html'"><svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Intune<span class="nav-badge" id="nb-intune-score">—</span></div>
     <div class="nav-item" data-page="o365.html"   onclick="location.href='o365.html'"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>Microsoft 365<span class="nav-badge" id="nb-o365-score">—</span></div>
-    <div class="nav-item" data-page="gpo.html"    onclick="location.href='gpo.html'"><svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>GPO<span class="nav-badge" id="nb-gpo-score">—</span></div>
     <div class="sb-footer">
       <div class="sb-user" id="nav-user">—</div>
       <div style="font-size:.6rem;color:var(--text2);margin-bottom:.25rem">par William EINSARGUEIX</div>
@@ -68,6 +67,7 @@
     </div>
 
     <div class="content">
+      <div id="lead-low-score-banner"></div>
       <!-- Score + métriques -->
       <div class="home-top">
         <div class="score-panel">
@@ -101,52 +101,8 @@
       <div class="sh"><span class="sh-title">Points d'audit</span></div>
       <div class="check-grid" id="home-checks"></div>
 
-      <!-- Recommandations -->
-      <div class="sh"><span class="sh-title">Recommandations</span></div>
-      <div id="home-recos"></div>
-
-      <!-- Admins globaux -->
-      <div class="sh" style="margin-top:.5rem"><span class="sh-title">Administrateurs globaux</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Admins globaux</span><span class="dp-count" id="cnt-admins">—</span></div>
-        <div class="filter-bar"><input class="filter-search" id="f-admins-search" placeholder="Rechercher..." oninput="filterAdminsEntra()"><span class="filter-count" id="f-admins-count"></span></div>
-        <table class="data-table"><thead><tr><th>Nom</th><th>UPN</th><th>Statut</th></tr></thead><tbody id="tbl-admins"></tbody></table>
-      </div>
-
-      <!-- Tous les utilisateurs -->
-      <div class="sh"><span class="sh-title">Utilisateurs licenciés</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Tous les utilisateurs</span><span class="dp-count" id="cnt-all-users">—</span></div>
-        <div class="filter-bar">
-          <input class="filter-search" id="f-users-search" placeholder="Rechercher nom / UPN...">
-          <div class="filter-sep"></div>
-          <span class="ftag active" data-group="utype" onclick="setUserFilter('all',this)">Tous</span>
-          <span class="ftag" data-group="utype" onclick="setUserFilter('nomfa',this)">Sans MFA</span>
-          <span class="ftag" data-group="utype" onclick="setUserFilter('inactive',this)">Inactifs &gt;90j</span>
-          <span class="ftag" data-group="utype" onclick="setUserFilter('neverlogin',this)">Jamais connectés</span>
-          <div class="filter-sep"></div>
-          <span class="ftag active" id="sort-users-name" onclick="sortUsers('name',this)">↕ Nom</span>
-          <span class="ftag" id="sort-users-login" onclick="sortUsers('login',this)">↕ Connexion</span>
-          <span class="filter-count" id="f-users-count"></span>
-        </div>
-        <table class="data-table"><thead><tr><th>Nom</th><th>UPN</th><th>Dernière connexion</th><th>MFA</th><th>Licences</th></tr></thead><tbody id="tbl-all-users"></tbody></table>
-      </div>
-
-      <!-- Conditional Access -->
-      <div class="sh"><span class="sh-title">Accès conditionnel</span></div>
-      <div class="data-panel">
-        <div class="dp-head"><span class="dp-title">Politiques CA</span><span class="dp-count" id="cnt-ca">—</span></div>
-        <div class="filter-bar">
-          <input class="filter-search" id="f-ca-search" placeholder="Rechercher une politique...">
-          <div class="filter-sep"></div>
-          <span class="ftag active" data-group="castate" onclick="setCAFilter('all',this)">Toutes</span>
-          <span class="ftag" data-group="castate" onclick="setCAFilter('enabled',this)">Activées</span>
-          <span class="ftag" data-group="castate" onclick="setCAFilter('report',this)">Rapport seul</span>
-          <span class="ftag" data-group="castate" onclick="setCAFilter('disabled',this)">Désactivées</span>
-          <span class="filter-count" id="f-ca-count"></span>
-        </div>
-        <table class="data-table"><thead><tr><th>Nom</th><th>État</th><th>Utilisateurs</th><th>Contrôles</th></tr></thead><tbody id="tbl-ca"></tbody></table>
-      </div>
+      <div id="lead-alarm-banner"></div>
+      <div id="lead-cta"></div>
     </div>
   </div>
 </div>
@@ -154,9 +110,9 @@
 <script src="js/utils.js"></script>
 <script src="js/graph.js"></script>
 <script src="js/audit-entra.js"></script>
+<script src="js/lead-form.js"></script>
 <script>
 function closeModalEntra() { document.getElementById("modal-overlay").classList.remove("active"); }
-function filterAdminsEntra() { if (_entraData) _rebuildAdminsTable(_entraData); }
 function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("sb-backdrop").classList.add("active"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sb-backdrop").classList.remove("active"); }
 
@@ -177,8 +133,20 @@ async function relancer() {
 }
 async function _pageAudit() {
   try {
-    await runEntraAudit(txt => gLoading(txt));
+    const result = await runEntraAudit(txt => gLoading(txt));
     set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
+    const d = result.data;
+    initLeadForm({
+      score:   result.score,
+      alerts:  result.alerts,
+      module:  "Entra ID",
+      details: {
+        noMfaUsers:    (d.noMfaUsers    || []).map(u => ({ name: u.displayName, upn: u.userPrincipalName })),
+        weakMfaUsers:  (d.weakMfaUsers  || []).map(u => ({ name: u.displayName, upn: u.userPrincipalName })),
+        inactiveUsers: (d.inactiveUsers || []).map(u => ({ name: u.displayName, upn: u.userPrincipalName })),
+        globalAdmins:  (d.globalAdmins  || []).map(u => ({ name: u.displayName, upn: u.userPrincipalName }))
+      }
+    });
     gLoaded();
   } catch(e) { gLoaded(); gShowErr(e.message); }
 }

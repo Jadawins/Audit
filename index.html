@@ -44,7 +44,7 @@
         </div>
         <div class="lb-text">
           <div class="lb-title">Score de sécurité</div>
-          <div class="lb-desc">Un score clair sur 4 domaines : identités, appareils, messagerie et stratégies de groupe.</div>
+          <div class="lb-desc">Un score clair sur 3 domaines : identités (Entra ID), appareils (Intune) et messagerie (Microsoft 365).</div>
         </div>
       </div>
       <div class="lb-card">
@@ -114,11 +114,6 @@
       Microsoft 365
       <span class="nav-badge" id="nb-o365-score">—</span>
     </div>
-    <div class="nav-item" data-page="gpo.html" onclick="location.href='gpo.html'">
-      <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
-      GPO
-      <span class="nav-badge" id="nb-gpo-score">—</span>
-    </div>
     <div class="sb-footer">
       <div class="sb-user" id="nav-user">—</div>
       <div style="font-size:.6rem;color:var(--text2);margin-bottom:.25rem">par William EINSARGUEIX</div>
@@ -144,6 +139,7 @@
     </div>
 
     <div class="content">
+      <div id="dash-crit-banner"></div>
       <!-- Score cards -->
       <div class="sh" style="margin-bottom:.85rem">
         <span class="sh-title">Scores de sécurité</span>
@@ -205,11 +201,10 @@
 const PAGES = [
   { key:"entra",  label:"Entra ID",     href:"entra.html",  icon:`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`,      color:"var(--acc2)" },
   { key:"intune", label:"Intune",       href:"intune.html", icon:`<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>`, color:"var(--green)" },
-  { key:"o365",   label:"Microsoft 365",href:"o365.html",   icon:`<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>`, color:"var(--orange)" },
-  { key:"gpo",    label:"GPO",          href:"gpo.html",    icon:`<path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>`, color:"var(--purple)" }
+  { key:"o365",   label:"Microsoft 365",href:"o365.html",   icon:`<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>`, color:"var(--orange)" }
 ];
 
-let _scores = { entra: null, intune: null, o365: null, gpo: null };
+let _scores = { entra: null, intune: null, o365: null };
 let _allAlerts = [];
 let _allRecos  = [];
 let _analysisData = {};
@@ -253,10 +248,6 @@ async function _runDashboard() {
     _runEntra(), _runIntune(), _runO365()
   ]);
 
-  // GPO = offline, score depuis cache si dispo
-  const gpoScore = sessionStorage.getItem("score-gpo");
-  _scores.gpo = gpoScore !== null ? parseInt(gpoScore) : null;
-
   // Collecter alertes
   ["entra","intune","o365"].forEach(k => {
     const raw = sessionStorage.getItem("alerts-" + k);
@@ -266,6 +257,7 @@ async function _runDashboard() {
   set("scores-status", "Analyse terminée — " + new Date().toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit"}));
   _renderScoreCards();
   _renderAlerts();
+  _renderCritBanner();
 
   // Afficher le lead form
   document.getElementById("lead-section").style.display = "block";
@@ -339,6 +331,18 @@ function _scoreCard(p, score) {
   </a>`;
 }
 
+// ── Bannière score critique ────────────────────────────────────────────────────
+function _renderCritBanner() {
+  const el = document.getElementById("dash-crit-banner");
+  if (!el) return;
+  const hasCrit = Object.values(_scores).some(s => s !== null && s < 50);
+  if (!hasCrit) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="low-score-banner" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <span>⚠ Un ou plusieurs scores sont critiques (&lt;50/100). Une action immédiate est recommandée.</span>
+    <a href="#lead-section" style="color:var(--red);font-size:.78rem;white-space:nowrap;text-decoration:underline">Améliorer mon score →</a>
+  </div>`;
+}
+
 // ── Render alertes ─────────────────────────────────────────────────────────────
 function _renderAlerts() {
   const el = document.getElementById("dash-alerts"); if (!el) return;
@@ -386,7 +390,8 @@ async function submitLead(e) {
         societe:   fd.get("societe"),
         email:     fd.get("email"),
         telephone: fd.get("telephone"),
-        scores
+        scores,
+        alerts: _allAlerts
       })
     });
     if (!r.ok) throw new Error("Erreur serveur");
