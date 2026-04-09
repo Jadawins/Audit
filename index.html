@@ -249,35 +249,33 @@ async function relancer() {
 
 // ── Cache → affichage immédiat ou premier audit ────────────────────────────────
 function _loadFromCacheOrRun() {
-  const se = sessionStorage.getItem("score-entra");
-  const si = sessionStorage.getItem("score-intune");
-  const so = sessionStorage.getItem("score-o365");
-  if (se !== null && si !== null && so !== null) {
-    _scores.entra  = parseInt(se);
-    _scores.intune = parseInt(si);
-    _scores.o365   = parseInt(so);
-    ["entra","intune","o365"].forEach(k => {
-      const raw = sessionStorage.getItem("alerts-" + k);
-      if (raw) try { _allAlerts.push(...JSON.parse(raw)); } catch {}
-    });
-    _renderScoreCards();
-    _renderAlerts();
-    _renderCritBanner();
-    const ctaEl = document.getElementById("dash-main-cta");
-    if (ctaEl) ctaEl.style.display = "flex";
-    const hasCrit = Object.values(_scores).some(s => s !== null && s < 50);
-    const ctaBtn  = document.getElementById("dash-cta-btn");
-    if (ctaBtn && hasCrit) ctaBtn.classList.add("crit");
-    const statusEl = document.getElementById("scores-status");
-    if (statusEl) statusEl.innerHTML =
-      `Résultats en cache · <button class="btn-sm" onclick="_forceReanalyse()" style="font-size:.65rem;padding:.15rem .5rem;vertical-align:middle">↺ Réanalyser</button>`;
-  } else {
-    _runDashboard();
+  const raw = sessionStorage.getItem("scores");
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      _scores.entra  = data.entra  ?? null;
+      _scores.intune = data.intune ?? null;
+      _scores.o365   = data.m365  ?? null;
+      _allAlerts     = data.alerts || [];
+      _renderScoreCards();
+      _renderAlerts();
+      _renderCritBanner();
+      const ctaEl = document.getElementById("dash-main-cta");
+      if (ctaEl) ctaEl.style.display = "flex";
+      const hasCrit = Object.values(_scores).some(s => s !== null && s < 50);
+      const ctaBtn  = document.getElementById("dash-cta-btn");
+      if (ctaBtn && hasCrit) ctaBtn.classList.add("crit");
+      const statusEl = document.getElementById("scores-status");
+      if (statusEl) statusEl.innerHTML =
+        `Résultats en cache · <button class="btn-sm" onclick="_forceReanalyse()" style="font-size:.65rem;padding:.15rem .5rem;vertical-align:middle">↺ Réanalyser</button>`;
+      return;
+    } catch {}
   }
+  _runDashboard();
 }
 
 async function _forceReanalyse() {
-  ["score-entra","score-intune","score-o365","alerts-entra","alerts-intune","alerts-o365"].forEach(k => sessionStorage.removeItem(k));
+  sessionStorage.removeItem("scores");
   _allAlerts = [];
   await _runDashboard();
 }
@@ -304,6 +302,16 @@ async function _runDashboard() {
   _renderScoreCards();
   _renderAlerts();
   _renderCritBanner();
+
+  // Persister pour retour navigation
+  if (_scores.entra !== null || _scores.intune !== null || _scores.o365 !== null) {
+    sessionStorage.setItem("scores", JSON.stringify({
+      entra:  _scores.entra,
+      intune: _scores.intune,
+      m365:   _scores.o365,
+      alerts: _allAlerts
+    }));
+  }
 
   // Afficher le CTA principal
   const ctaEl = document.getElementById("dash-main-cta");
