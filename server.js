@@ -6,13 +6,13 @@
 "use strict";
 const express    = require("express");
 const nodemailer = require("nodemailer");
-const fs         = require("fs");
 const path       = require("path");
 const https      = require("https");
 const { execSync } = require("child_process");
 const rateLimit  = require("express-rate-limit");
 const { LeadSchema, InboxRulesSchema } = require("./validation");
 const logger     = require("./logger");
+const { saveLead } = require("./db");
 
 const app  = express();
 const PORT = 3001;
@@ -64,7 +64,6 @@ const graphLimiter = rateLimit({
 });
 
 // ── Config ─────────────────────────────────────────────────────────────────────
-const LEADS_FILE    = path.join(__dirname, "leads.json");
 const CLIENT_ID     = process.env.AZURE_CLIENT_ID     || "bd7f8225-61af-4ac0-bc6c-aaccd6a22fac";
 const CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET || "";
 const SMTP_HOST     = process.env.SMTP_HOST     || "mail.auditms.fr";
@@ -193,16 +192,12 @@ app.post("/api/lead", leadLimiter, async (req, res) => {
     if (!parsed.success) return res.status(400).json({ error: "Données invalides", details: parsed.error.flatten() });
     const { prenom, nom, societe, email, telephone, scores } = parsed.data;
 
-    // 1. Append dans leads.json
+    // 1. Sauvegarde en base MongoDB
     const lead = {
       prenom, nom, societe, email, telephone, scores,
-      ip:   req.headers["x-forwarded-for"] || req.socket.remoteAddress,
-      date: new Date().toISOString()
+      ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress
     };
-    let leads = [];
-    try { if (fs.existsSync(LEADS_FILE)) leads = JSON.parse(fs.readFileSync(LEADS_FILE, "utf8")); } catch {}
-    leads.push(lead);
-    fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+    await saveLead(lead);
 
     // 2. Email via SMTP Zimbra
     if (SMTP_PASS) {
