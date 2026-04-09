@@ -37,6 +37,51 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+/* 3 colonnes fixes sur le dashboard principal */
+#dash-scores {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 680px) {
+  #dash-scores { grid-template-columns: 1fr; }
+}
+
+/* ── Dashboard — CTA principal ────────────────────────────── */
+#dash-main-cta {
+  justify-content: center; margin: 1.5rem 0 1.25rem;
+}
+.dash-cta-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: var(--accent); color: #fff; border: none;
+  padding: .9rem 2.5rem; border-radius: 10px;
+  font-size: .95rem; font-weight: 500; cursor: pointer;
+  font-family: var(--sans); letter-spacing: .01em;
+  box-shadow: 0 4px 20px rgba(59,130,246,.35);
+  transition: opacity .15s, transform .15s;
+}
+.dash-cta-btn:hover { opacity: .9; transform: translateY(-1px); }
+.dash-cta-btn.crit  {
+  background: var(--red);
+  box-shadow: 0 4px 20px rgba(239,68,68,.35);
+  animation: pulse-cta 2s ease-in-out infinite;
+}
+
+/* ── Dashboard — Blur alertes ─────────────────────────────── */
+.alert-blur-wrap {
+  position: relative; margin-top: .5rem;
+}
+.alert-blurred {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+}
+.alert-blur-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(rgba(10,12,16,0) 0%, rgba(10,12,16,.88) 45%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  gap: .75rem; padding: 1.5rem 1rem 1rem;
+}
+.alert-overlay-txt { font-size: .82rem; color: var(--text3); }
 .score-card {
   background: var(--bg2); border: 1px solid var(--bd); border-radius: 11px;
   padding: 1.5rem 1.25rem; display: flex; flex-direction: column;

@@ -157,38 +157,49 @@
         <div style="color:var(--text2);font-size:.78rem;padding:.5rem 0">Analyse en cours...</div>
       </div>
 
-      <!-- Lead form (masqué tant que scores pas prêts) -->
-      <div id="lead-section" style="display:none">
-        <div class="lead-panel" id="lead-panel">
-          <div class="lead-head">
-            <h3>📊 Recevez votre rapport complet par email</h3>
-            <p>Vos scores sont prêts. Laissez vos coordonnées pour recevoir le rapport détaillé avec toutes les recommandations priorisées.</p>
-          </div>
-          <form class="lead-form" id="lead-form" onsubmit="submitLead(event)">
-            <input type="text"  name="prenom"    placeholder="Prénom *"   required>
-            <input type="text"  name="nom"       placeholder="Nom *"      required>
-            <input type="text"  name="societe"   placeholder="Société"    class="full">
-            <input type="email" name="email"     placeholder="Email *"    required>
-            <input type="tel"   name="telephone" placeholder="Téléphone">
-            <div class="lead-submit">
-              <p>Vos données ne sont pas revendues.</p>
-              <button type="submit" class="btn btn-primary" style="width:auto" id="lead-btn">
-                Recevoir le rapport
-              </button>
-            </div>
-          </form>
-          <div class="lead-success" id="lead-success">
-            <div class="ls-icon">✓</div>
-            <strong>Rapport envoyé !</strong><br>
-            <span style="font-size:.78rem;color:var(--text2)">Retrouvez ci-dessous les détails des recommandations.</span>
-          </div>
-        </div>
+      <!-- CTA principal -->
+      <div id="dash-main-cta" style="display:none">
+        <button id="dash-cta-btn" class="dash-cta-btn" onclick="openDashModal()">
+          🔒 Obtenir les recommandations personnalisées
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
-        <!-- Recommandations complètes (visibles après envoi du lead) -->
-        <div class="full-recos" id="full-recos">
-          <div class="sh"><span class="sh-title">Recommandations détaillées</span></div>
-          <div id="full-recos-content"></div>
+<!-- ── MODALE DASHBOARD ──────────────────────────────────── -->
+<div class="modal-overlay" id="dash-modal-overlay">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <h3>Obtenez votre analyse personnalisée</h3>
+      <button class="modal-x" onclick="closeDashModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:1.5rem">
+      <div id="dash-modal-form">
+        <p style="font-size:.82rem;color:var(--text2);margin-bottom:1.25rem;line-height:1.6">
+          Un expert prendra contact avec vous pour analyser vos résultats et vous proposer un plan d'action adapté.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+          <input class="lead-form-input" id="dm-prenom"      placeholder="Prénom *">
+          <input class="lead-form-input" id="dm-nom"         placeholder="Nom *">
+          <input class="lead-form-input" id="dm-societe"     placeholder="Société" style="grid-column:1/-1">
+          <input class="lead-form-input" id="dm-email"       placeholder="Email professionnel *" type="email" style="grid-column:1/-1">
+          <input class="lead-form-input" id="dm-telephone"   placeholder="Téléphone" style="grid-column:1/-1">
+          <textarea class="lead-form-input" id="dm-commentaire" placeholder="Message (facultatif)" rows="3" style="grid-column:1/-1;resize:vertical"></textarea>
         </div>
+        <div class="error-msg" id="dm-error" style="margin-top:.75rem;display:none"></div>
+        <button class="btn btn-primary" id="dm-submit-btn" style="width:100%;margin-top:1rem;padding:.75rem;font-size:.9rem" onclick="submitDashLead()">
+          Envoyer ma demande
+        </button>
+        <p style="font-size:.65rem;color:var(--text2);margin-top:.75rem;text-align:center">
+          Vos données ne sont pas revendues · <span onclick="closeDashModal()" style="cursor:pointer;color:var(--acc2);text-decoration:underline">Fermer</span>
+        </p>
+      </div>
+      <div id="dash-modal-success" style="display:none;text-align:center;padding:2.5rem 1rem">
+        <div style="font-size:2.5rem;margin-bottom:.75rem;color:var(--green)">✓</div>
+        <p style="font-size:.95rem;font-weight:500;margin-bottom:.4rem">Demande envoyée !</p>
+        <p style="font-size:.8rem;color:var(--text2)">Nous reviendrons vers vous rapidement.</p>
+        <button class="btn btn-secondary" style="margin-top:1.5rem" onclick="closeDashModal()">Fermer</button>
       </div>
     </div>
   </div>
@@ -259,11 +270,12 @@ async function _runDashboard() {
   _renderAlerts();
   _renderCritBanner();
 
-  // Afficher le lead form
-  document.getElementById("lead-section").style.display = "block";
-
-  // Préparer les recommandations complètes
-  _buildFullRecos();
+  // Afficher le CTA principal
+  const ctaEl = document.getElementById("dash-main-cta");
+  if (ctaEl) ctaEl.style.display = "flex";
+  const hasCrit = Object.values(_scores).some(s => s !== null && s < 50);
+  const ctaBtn = document.getElementById("dash-cta-btn");
+  if (ctaBtn && hasCrit) ctaBtn.classList.add("crit");
 }
 
 async function _runEntra() {
@@ -338,8 +350,8 @@ function _renderCritBanner() {
   const hasCrit = Object.values(_scores).some(s => s !== null && s < 50);
   if (!hasCrit) { el.innerHTML = ""; return; }
   el.innerHTML = `<div class="low-score-banner" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-    <span>⚠ Un ou plusieurs scores sont critiques (&lt;50/100). Une action immédiate est recommandée.</span>
-    <a href="#lead-section" style="color:var(--red);font-size:.78rem;white-space:nowrap;text-decoration:underline">Améliorer mon score →</a>
+    <span>⚠ Votre environnement présente des risques critiques — une intervention est recommandée.</span>
+    <button onclick="openDashModal()" style="background:none;border:1px solid rgba(239,68,68,.4);color:var(--red);padding:.3rem .9rem;border-radius:6px;font-size:.75rem;cursor:pointer;font-family:var(--sans);white-space:nowrap;flex-shrink:0">Améliorer mon score</button>
   </div>`;
 }
 
@@ -350,63 +362,69 @@ function _renderAlerts() {
     el.innerHTML = `<div class="dash-no-alerts">✓ Aucune alerte critique détectée sur les modules analysés.</div>`;
     return;
   }
-  el.innerHTML = _allAlerts.map(a =>
+  const visible = _allAlerts.slice(0, 2);
+  const hidden  = _allAlerts.slice(2);
+  let html = visible.map(a =>
     `<div class="dash-alert ${a.lvl}"><span class="da-icon">${a.lvl==="red"?"🔴":"🟡"}</span>${a.msg}</div>`
   ).join("");
-}
-
-// ── Recommandations complètes (après lead) ─────────────────────────────────────
-function _buildFullRecos() {
-  const content = _allRecos.map(r => {
-    if (!r.alerts || r.alerts.length === 0) return "";
-    return `<div style="margin-bottom:1rem">
-      <div class="sh"><span class="sh-title">${r.section}</span><a class="sh-link" href="${r.href}">Voir le détail →</a></div>
-      ${r.alerts.map(a => `<div class="reco${a.lvl==="red"?" crit":""}"><h4>⚠ ${a.msg}</h4><p>Consultez la page <a href="${r.href}" style="color:var(--acc2)">${r.section}</a> pour les détails et recommandations.</p></div>`).join("")}
+  if (hidden.length > 0) {
+    const blurred = hidden.map(a =>
+      `<div class="dash-alert ${a.lvl}"><span class="da-icon">${a.lvl==="red"?"🔴":"🟡"}</span>${a.msg}</div>`
+    ).join("");
+    const n = hidden.length;
+    html += `<div class="alert-blur-wrap">
+      <div class="alert-blurred">${blurred}</div>
+      <div class="alert-blur-overlay">
+        <span class="alert-overlay-txt">${n} point${n>1?"s":""} supplémentaire${n>1?"s":""} identifié${n>1?"s":""}</span>
+        <button class="dash-cta-btn" style="padding:.55rem 1.5rem;font-size:.82rem" onclick="openDashModal()">Voir l'analyse complète</button>
+      </div>
     </div>`;
-  }).join("");
-
-  const el = document.getElementById("full-recos-content");
-  if (el) el.innerHTML = content || `<div class="reco ok"><h4>✓ Aucune anomalie critique détectée</h4><p>Consultez chaque page d'audit pour le détail complet.</p></div>`;
+  }
+  el.innerHTML = html;
 }
 
-// ── Lead form ──────────────────────────────────────────────────────────────────
-async function submitLead(e) {
-  e.preventDefault();
-  const btn  = document.getElementById("lead-btn");
-  const form = document.getElementById("lead-form");
-  btn.disabled = true; btn.textContent = "Envoi...";
-
-  const fd = new FormData(form);
+// ── Modal dashboard ────────────────────────────────────────────────────────────
+function openDashModal() {
+  document.getElementById("dash-modal-overlay").classList.add("active");
+  document.getElementById("dash-modal-form").style.display   = "";
+  document.getElementById("dash-modal-success").style.display = "none";
+  const err = document.getElementById("dm-error");
+  if (err) { err.textContent = ""; err.style.display = "none"; }
+}
+function closeDashModal() {
+  document.getElementById("dash-modal-overlay").classList.remove("active");
+}
+async function submitDashLead() {
+  const prenom      = document.getElementById("dm-prenom")?.value.trim()      || "";
+  const nom         = document.getElementById("dm-nom")?.value.trim()          || "";
+  const societe     = document.getElementById("dm-societe")?.value.trim()      || null;
+  const email       = document.getElementById("dm-email")?.value.trim()        || "";
+  const telephone   = document.getElementById("dm-telephone")?.value.trim()    || null;
+  const commentaire = document.getElementById("dm-commentaire")?.value.trim()  || null;
+  const errEl       = document.getElementById("dm-error");
+  const btn         = document.getElementById("dm-submit-btn");
+  if (!prenom || !nom || !email) {
+    errEl.textContent = "Prénom, nom et email sont obligatoires."; errEl.style.display = "block"; return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = "Adresse email invalide."; errEl.style.display = "block"; return;
+  }
+  errEl.style.display = "none";
+  if (btn) { btn.disabled = true; btn.textContent = "Envoi en cours..."; }
   const scores = {};
   PAGES.forEach(p => { if (_scores[p.key] !== null) scores[p.label] = _scores[p.key]; });
-
   try {
     const r = await fetch("https://auditms.fr/api/lead", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prenom:    fd.get("prenom"),
-        nom:       fd.get("nom"),
-        societe:   fd.get("societe"),
-        email:     fd.get("email"),
-        telephone: fd.get("telephone"),
-        scores,
-        alerts: _allAlerts
-      })
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prenom, nom, societe, email, telephone, commentaire, scores, alerts: _allAlerts })
     });
-    if (!r.ok) throw new Error("Erreur serveur");
-    form.style.display = "none";
-    document.getElementById("lead-success").style.display = "block";
-    // Révéler les recommandations complètes
-    const fr = document.getElementById("full-recos");
-    if (fr) fr.classList.add("visible");
-  } catch(err) {
-    btn.disabled = false; btn.textContent = "Recevoir le rapport";
-    // En cas d'erreur serveur, on affiche quand même les recommandations
-    form.style.display = "none";
-    document.getElementById("lead-success").style.display = "block";
-    const fr = document.getElementById("full-recos");
-    if (fr) fr.classList.add("visible");
+    if (!r.ok) throw new Error("Erreur " + r.status);
+    document.getElementById("dash-modal-form").style.display    = "none";
+    document.getElementById("dash-modal-success").style.display = "";
+  } catch {
+    errEl.textContent = "Impossible d'envoyer. Réessayez dans quelques instants.";
+    errEl.style.display = "block";
+    if (btn) { btn.disabled = false; btn.textContent = "Envoyer ma demande"; }
   }
 }
 
