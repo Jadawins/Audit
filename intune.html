@@ -109,6 +109,7 @@
 <script src="js/audit-intune.js"></script>
 <script src="js/lead-form.js"></script>
 <script>
+if (!sessionStorage.getItem("lead-submitted")) { location.replace("index.html"); }
 function openSidebar()  { document.getElementById("sidebar").classList.add("open"); document.getElementById("sb-backdrop").classList.add("active"); }
 function closeSidebar() { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sb-backdrop").classList.remove("active"); }
 

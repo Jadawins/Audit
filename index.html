@@ -99,17 +99,17 @@
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Tableau de bord
     </div>
-    <div class="nav-item" data-page="entra.html" onclick="location.href='entra.html'">
+    <div class="nav-item" data-page="entra.html" onclick="_navGated('entra.html')">
       <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Entra ID
       <span class="nav-badge" id="nb-entra-score">—</span>
     </div>
-    <div class="nav-item" data-page="intune.html" onclick="location.href='intune.html'">
+    <div class="nav-item" data-page="intune.html" onclick="_navGated('intune.html')">
       <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
       Intune
       <span class="nav-badge" id="nb-intune-score">—</span>
     </div>
-    <div class="nav-item" data-page="o365.html" onclick="location.href='o365.html'">
+    <div class="nav-item" data-page="o365.html" onclick="_navGated('o365.html')">
       <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
       Microsoft 365
       <span class="nav-badge" id="nb-o365-score">—</span>
@@ -462,12 +462,22 @@ async function submitDashLead() {
       body: JSON.stringify({ prenom, nom, societe, email, telephone, commentaire, scores, alerts: _allAlerts })
     });
     if (!r.ok) throw new Error("Erreur " + r.status);
+    sessionStorage.setItem("lead-submitted", "1");
     document.getElementById("dash-modal-form").style.display    = "none";
     document.getElementById("dash-modal-success").style.display = "";
   } catch {
     errEl.textContent = "Impossible d'envoyer. Réessayez dans quelques instants.";
     errEl.style.display = "block";
     if (btn) { btn.disabled = false; btn.textContent = "Envoyer ma demande"; }
+  }
+}
+
+// ── Navigation conditionnelle ──────────────────────────────────────────────────
+function _navGated(href) {
+  if (sessionStorage.getItem("lead-submitted")) {
+    location.href = href;
+  } else {
+    openDashModal();
   }
 }
 
