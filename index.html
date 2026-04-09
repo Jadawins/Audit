@@ -224,8 +224,8 @@ let _analysisData = {};
 window.addEventListener("load", () => {
   graphInitPage(acc => {
     set("topbar-date", new Date().toLocaleDateString("fr-FR", {day:"2-digit",month:"long",year:"numeric"}));
-    _renderScoreCards(); // affiche les cartes en loading
-    _runDashboard();
+    _renderScoreCards();
+    _loadFromCacheOrRun();
   });
 });
 
@@ -245,6 +245,41 @@ async function login() {
 }
 async function relancer() {
   try { await graphRefreshToken(); _runDashboard(); } catch(e) { gShowErr(e.message); }
+}
+
+// ── Cache → affichage immédiat ou premier audit ────────────────────────────────
+function _loadFromCacheOrRun() {
+  const se = sessionStorage.getItem("score-entra");
+  const si = sessionStorage.getItem("score-intune");
+  const so = sessionStorage.getItem("score-o365");
+  if (se !== null && si !== null && so !== null) {
+    _scores.entra  = parseInt(se);
+    _scores.intune = parseInt(si);
+    _scores.o365   = parseInt(so);
+    ["entra","intune","o365"].forEach(k => {
+      const raw = sessionStorage.getItem("alerts-" + k);
+      if (raw) try { _allAlerts.push(...JSON.parse(raw)); } catch {}
+    });
+    _renderScoreCards();
+    _renderAlerts();
+    _renderCritBanner();
+    const ctaEl = document.getElementById("dash-main-cta");
+    if (ctaEl) ctaEl.style.display = "flex";
+    const hasCrit = Object.values(_scores).some(s => s !== null && s < 50);
+    const ctaBtn  = document.getElementById("dash-cta-btn");
+    if (ctaBtn && hasCrit) ctaBtn.classList.add("crit");
+    const statusEl = document.getElementById("scores-status");
+    if (statusEl) statusEl.innerHTML =
+      `Résultats en cache · <button class="btn-sm" onclick="_forceReanalyse()" style="font-size:.65rem;padding:.15rem .5rem;vertical-align:middle">↺ Réanalyser</button>`;
+  } else {
+    _runDashboard();
+  }
+}
+
+async function _forceReanalyse() {
+  ["score-entra","score-intune","score-o365","alerts-entra","alerts-intune","alerts-o365"].forEach(k => sessionStorage.removeItem(k));
+  _allAlerts = [];
+  await _runDashboard();
 }
 
 // ── Analyse dashboard ──────────────────────────────────────────────────────────
