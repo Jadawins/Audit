@@ -91,6 +91,13 @@
   .module-name { font-size: .82rem; font-weight: 500; }
   .module-checks { font-size: .75rem; color: var(--text2); line-height: 1.7; }
 
+  .role-pills { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .role-pill {
+    background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2);
+    color: var(--acc2); border-radius: 5px; font-size: .72rem;
+    padding: .2rem .6rem; font-family: var(--mono);
+  }
+
   @media (max-width: 600px) {
     .perm-row { flex-direction: column; gap: .2rem; }
     .perm-name { min-width: unset; }
@@ -184,18 +191,32 @@
   <div class="section-title">Rôles requis sur le tenant</div>
 
   <div class="role-card">
-    <div class="role-badge">Recommandé</div>
+    <div class="role-badge">Option 1 — Simple</div>
     <div class="role-info">
       <div class="role-name">Administrateur général <span style="color:var(--text2);font-size:.78rem;font-weight:400">(Global Administrator)</span></div>
-      <div class="role-desc">Accès complet à tous les modules. Peut approuver les permissions Graph pour l'ensemble du tenant lors de la première connexion.</div>
+      <div class="role-desc">Accès complet à tous les modules. Peut également accorder le consentement aux permissions lors de la première connexion.</div>
     </div>
   </div>
 
   <div class="role-card">
-    <div class="role-badge">Alternatif</div>
+    <div class="role-badge">Option 2 — Moindre privilège</div>
     <div class="role-info">
-      <div class="role-name">Lecteur général + Administrateur Intune <span style="color:var(--text2);font-size:.78rem;font-weight:400">(Global Reader + Intune Administrator)</span></div>
-      <div class="role-desc">Permet d'accéder aux modules Entra ID, Intune et Microsoft 365. Certaines données peuvent être partiellement restreintes selon la configuration du tenant.</div>
+      <div class="role-name">Combinaison de rôles dédiés</div>
+      <div class="role-desc" style="margin-bottom:.65rem">Pour respecter le principe du moindre privilège, attribuez les 5 rôles suivants au compte utilisé pour l'audit :</div>
+      <div class="role-pills">
+        <span class="role-pill">Cloud Application Administrator</span>
+        <span class="role-pill">Global Reader</span>
+        <span class="role-pill">Security Reader</span>
+        <span class="role-pill">Intune Service Administrator</span>
+        <span class="role-pill">Exchange Administrator</span>
+      </div>
+      <div class="role-desc" style="margin-top:.65rem;font-size:.75rem">
+        <strong>Cloud Application Administrator</strong> — accorde le consentement aux permissions Graph lors du premier lancement<br>
+        <strong>Global Reader</strong> — accès en lecture à l'annuaire, utilisateurs, organisation, rôles<br>
+        <strong>Security Reader</strong> — accès aux politiques CA, logs d'audit, Secure Score<br>
+        <strong>Intune Service Administrator</strong> — accès aux appareils et politiques Intune<br>
+        <strong>Exchange Administrator</strong> — accès aux règles inbox et paramètres boîtes mail
+      </div>
     </div>
   </div>
 
@@ -203,11 +224,11 @@
     <div class="check-list">
       <div class="check-row check-warn">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span>Les modules pour lesquels le compte n'a pas les droits suffisants afficheront <strong>N/A</strong> au lieu d'un score. L'outil reste utilisable partiellement.</span>
+        <span>Le consentement aux permissions Graph n'est à accorder <strong>qu'une seule fois</strong>. Les connexions suivantes ne le demandent plus.</span>
       </div>
       <div class="check-row check-warn">
         <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span>Lors de la première connexion, Microsoft demandera un consentement administrateur pour les permissions ci-dessous. Ce consentement peut être accordé une fois pour tous les utilisateurs du tenant.</span>
+        <span>Les modules pour lesquels le compte n'a pas les droits suffisants afficheront <strong>N/A</strong> au lieu d'un score.</span>
       </div>
     </div>
   </div>
