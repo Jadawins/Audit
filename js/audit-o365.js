@@ -33,9 +33,9 @@ const SENSITIVE_SCOPES = new Set([
 // ── Score /100 ─────────────────────────────────────────────────────────────────
 function calcO365Score(d) {
   const pts = {
-    licenses:   d.wastedLicenses.length===0 ? 30 : d.wastedLicenses.length<=5 ? 15 : 0,
-    forwarding: d.forwardingUsers.length===0 ? 40 : d.forwardingUsers.length<=2 ? 20 : 0,
-    oauth:      d.riskyOAuthApps.length===0  ? 30 : d.riskyOAuthApps.length<=3  ? 15 : 0
+    licenses: d.wastedLicenses.length===0 ? 40 : d.wastedLicenses.length<=5 ? 20 : 0,
+    oauth:    d.riskyOAuthApps.length===0  ? 40 : d.riskyOAuthApps.length<=3 ? 20 : 0,
+    admins:   d.adminsWithMailbox.length===0 ? 20 : d.adminsWithMailbox.length<=2 ? 10 : 0
   };
   return { pts, total: Object.values(pts).reduce((a, b) => a + b, 0) };
 }
@@ -82,41 +82,26 @@ async function fetchO365Data(updateFn) {
   const wastedDedup = [...wastedMap.values()];
   const wastedCost  = _estimateWastedCost(wastedDedup, skus);
 
-  // ── Forwarding SMTP externe ─────────────────────────────────────────────────
-  const forwardingUsers = await _checkForwarding(enabledUsers, tenantDomains, up);
-
   // ── Apps OAuth tierces sensibles ────────────────────────────────────────────
   const riskyOAuthApps = await _checkOAuthApps(up);
+
+  // ── Admins sans licence dédiée ───────────────────────────────────────────────
+  up("Administrateurs globaux...");
+  const adminsRaw    = await gGet("/directoryRoles/roleTemplateId=62e90394-69f5-4237-9190-012177145e10/members");
+  const globalAdmins = adminsRaw?.value || [];
+  // Admins qui utilisent un compte avec boîte mail (non dédié)
+  const adminsWithMailbox = globalAdmins.filter(a =>
+    rawUsers.find(u => u.id === a.id && u.assignedLicenses?.length > 0)
+  );
 
   return {
     enabledUsers, disabledUsers, inactiveWithLicenses, neverLoggedWithLicenses,
     wastedLicenses: wastedDedup, wastedCost, skus,
-    forwardingUsers, riskyOAuthApps, tenantDomains
+    globalAdmins, adminsWithMailbox,
+    riskyOAuthApps, tenantDomains
   };
 }
 
-// ── Forwarding SMTP externe ─────────────────────────────────────────────────────
-async function _checkForwarding(users, tenantDomains, updateFn) {
-  const results = [];
-  for (let i = 0; i < users.length; i++) {
-    if (i % 10 === 0) {
-      if (updateFn) updateFn("Forwarding — " + i + "/" + users.length + "...");
-      if (i > 0) await new Promise(r => setTimeout(r, 100));
-    }
-    const u = users[i];
-    try {
-      const s = await gGet("/users/" + u.id + "/mailboxSettings");
-      if (!s) continue;
-      const fwd = s.forwardingSmtpAddress || s.forwardingAddress?.emailAddress?.address;
-      if (!fwd) continue;
-      const domain = fwd.split("@")[1]?.toLowerCase();
-      if (domain && !tenantDomains.has(domain)) {
-        results.push({ user: u, forwardTo: fwd, type: s.forwardingSmtpAddress ? "SMTP" : "Exchange" });
-      }
-    } catch {}
-  }
-  return results;
-}
 
 // ── Apps OAuth tierces sensibles ────────────────────────────────────────────────
 async function _checkOAuthApps(updateFn) {
@@ -178,10 +163,12 @@ function buildO365Alerts(d) {
   const alerts = [];
   if (d.wastedLicenses.length > 0)
     alerts.push({ lvl:"orange", msg: d.wastedLicenses.length+" licence(s) potentiellement gaspillée(s) (≈"+d.wastedCost+"€/mois)" });
-  if (d.forwardingUsers.length > 0)
-    alerts.push({ lvl:"red", msg: d.forwardingUsers.length+" boîte(s) avec forwarding vers un domaine externe" });
-  if (d.riskyOAuthApps.length > 0)
-    alerts.push({ lvl:"orange", msg: d.riskyOAuthApps.length+" application(s) tierce(s) avec accès sensibles (OAuth)" });
+  if (d.riskyOAuthApps.filter(a => a.risk==="red").length > 0)
+    alerts.push({ lvl:"red", msg: d.riskyOAuthApps.filter(a=>a.risk==="red").length+" app(s) OAuth à haut risque (Mail.ReadWrite / Files.ReadWrite.All)" });
+  else if (d.riskyOAuthApps.length > 0)
+    alerts.push({ lvl:"orange", msg: d.riskyOAuthApps.length+" app(s) tierce(s) avec accès sensibles (OAuth)" });
+  if (d.adminsWithMailbox.length > 0)
+    alerts.push({ lvl:"orange", msg: d.adminsWithMailbox.length+" admin(s) global(aux) sans compte dédié" });
   return alerts;
 }
 
@@ -195,25 +182,25 @@ function renderO365Page(d) {
   // Métriques
   const mEl = document.getElementById("o365-metrics");
   if (mEl) mEl.innerHTML = [
-    { lbl:"Utilisateurs licenciés",  val:d.enabledUsers.length,      sub:"Membres actifs",              cls:"blue" },
-    { lbl:"Licences gaspillées",     val:d.wastedLicenses.length,    sub:"Inactifs/désactivés",         cls:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red" },
-    { lbl:"Coût estimé gaspillé",    val:"≈"+d.wastedCost+"€",       sub:"Par mois (indicatif)",        cls:d.wastedCost===0?"green":d.wastedCost<100?"orange":"red" },
-    { lbl:"Forwarding externe",      val:d.forwardingUsers.length,   sub:"Boîtes avec redirection",     cls:d.forwardingUsers.length===0?"green":"red" },
-    { lbl:"Apps OAuth sensibles",    val:d.riskyOAuthApps.length,    sub:"Accès mail/fichiers tiers",   cls:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red" }
+    { lbl:"Utilisateurs licenciés",  val:d.enabledUsers.length,        sub:"Membres actifs",                cls:"blue" },
+    { lbl:"Licences gaspillées",     val:d.wastedLicenses.length,      sub:"Inactifs/désactivés",           cls:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red" },
+    { lbl:"Coût estimé gaspillé",    val:"≈"+d.wastedCost+"€",         sub:"Par mois (indicatif)",          cls:d.wastedCost===0?"green":d.wastedCost<100?"orange":"red" },
+    { lbl:"Apps OAuth sensibles",    val:d.riskyOAuthApps.length,      sub:"Accès mail/fichiers tiers",     cls:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red" },
+    { lbl:"Admins sans compte dédié",val:d.adminsWithMailbox.length,   sub:"Admins avec boîte mail active", cls:d.adminsWithMailbox.length===0?"green":d.adminsWithMailbox.length<=2?"orange":"red" }
   ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub||""}</div></div>`).join("");
 
   // Points d'audit
   const cEl = document.getElementById("o365-checks");
   if (cEl) cEl.innerHTML = [
-    { name:"Licences gaspillées", desc:d.wastedLicenses.length+" compte(s) inactif/désactivé avec licence",       pts:pts.licenses,   max:30, s:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red",   val:d.wastedLicenses.length+" compte(s)" },
-    { name:"Forwarding externe",  desc:d.forwardingUsers.length+" boîte(s) redirigent vers un domaine externe",   pts:pts.forwarding, max:40, s:d.forwardingUsers.length===0?"green":d.forwardingUsers.length<=2?"orange":"red",   val:d.forwardingUsers.length+" boîte(s)" },
-    { name:"Apps OAuth tierces",  desc:d.riskyOAuthApps.length+" app(s) tierce(s) avec scopes sensibles consentis",pts:pts.oauth,     max:30, s:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red",    val:d.riskyOAuthApps.length+" app(s)" }
+    { name:"Licences gaspillées",    desc:d.wastedLicenses.length+" compte(s) inactif/désactivé avec licence",         pts:pts.licenses, max:40, s:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red",   val:d.wastedLicenses.length+" compte(s)" },
+    { name:"Apps OAuth tierces",     desc:d.riskyOAuthApps.length+" app(s) tierce(s) avec scopes sensibles consentis", pts:pts.oauth,    max:40, s:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red",   val:d.riskyOAuthApps.length+" app(s)" },
+    { name:"Admins sans compte dédié",desc:d.adminsWithMailbox.length+" admin(s) global(aux) avec boîte mail active",  pts:pts.admins,   max:20, s:d.adminsWithMailbox.length===0?"green":d.adminsWithMailbox.length<=2?"orange":"red", val:d.adminsWithMailbox.length+" admin(s)" }
   ].map(c => { const lbl=c.s==="green"?"OK":c.s==="orange"?"Attention":"Critique"; return `<div class="check-card"><div class="cc-top"><span class="cc-name">${c.name}</span><span class="cc-pts">${c.pts}/${c.max}</span></div><div class="cc-desc">${c.desc}</div><div class="cc-bot"><span class="cc-val">${c.val}</span><span class="pill pill-${c.s}"><span class="pill-dot"></span>${lbl}</span></div></div>`; }).join("");
 
   _renderO365Recos(d);
   _renderWastedTable(d);
-  _renderForwardingTable(d);
   _renderOAuthTable(d);
+  _renderAdminsTable(d);
 
   sessionStorage.setItem("score-o365",  total);
   sessionStorage.setItem("alerts-o365", JSON.stringify(buildO365Alerts(d)));
@@ -223,18 +210,18 @@ function renderO365Page(d) {
 function _renderO365Recos(d) {
   const el = document.getElementById("o365-recos"); if (!el) return;
   const recos = [];
-  if (d.forwardingUsers.length > 0)
-    recos.push({ t:"Forwarding SMTP externe détecté", p:d.forwardingUsers.length+" boîte(s) redirigent automatiquement les mails vers un domaine externe. Vérifier si c'est légitime — ce vecteur est très utilisé post-compromise pour exfiltrer silencieusement.", l:"red" });
   if (d.riskyOAuthApps.filter(a => a.risk==="red").length > 0)
-    recos.push({ t:"Applications OAuth à haut risque", p:d.riskyOAuthApps.filter(a=>a.risk==="red").length+" app(s) ont un accès Mail.ReadWrite ou Files.ReadWrite.All. Révoquer les apps non reconnues via Azure AD → Enterprise applications.", l:"red" });
+    recos.push({ t:"Applications OAuth à haut risque", p:d.riskyOAuthApps.filter(a=>a.risk==="red").length+" app(s) ont accès Mail.ReadWrite ou Files.ReadWrite.All. Révoquer les apps non reconnues via Azure AD → Enterprise applications.", l:"red" });
   if (d.riskyOAuthApps.filter(a => a.risk==="orange").length > 0)
     recos.push({ t:"Applications OAuth avec accès sensibles", p:d.riskyOAuthApps.filter(a=>a.risk==="orange").length+" app(s) ont accès aux mails ou calendriers. Vérifier leur légitimité.", l:"orange" });
-  if (d.wastedLicenses.length > 0)
-    recos.push({ t:"Licences gaspillées (≈"+d.wastedCost+"€/mois)", p:d.wastedLicenses.length+" compte(s) inactifs ou désactivés conservent des licences. Libérer pour économiser ≈"+d.wastedCost+"€/mois.", l:"orange" });
+  if (d.adminsWithMailbox.length > 0)
+    recos.push({ t:"Admins globaux sans compte dédié", p:d.adminsWithMailbox.length+" admin(s) global(aux) utilisent un compte avec boîte mail. Bonne pratique : compte admin dédié sans licence Exchange pour limiter la surface d'attaque.", l:"orange" });
   if (d.disabledUsers.length > 0)
-    recos.push({ t:"Comptes désactivés avec licence", p:d.disabledUsers.length+" compte(s) désactivé(s) ont encore des licences assignées. À retirer immédiatement.", l:"red" });
+    recos.push({ t:"Comptes désactivés avec licence", p:d.disabledUsers.length+" compte(s) désactivé(s) ont encore des licences. À retirer immédiatement.", l:"red" });
+  if (d.wastedLicenses.length > 0)
+    recos.push({ t:"Licences gaspillées (≈"+d.wastedCost+"€/mois)", p:d.wastedLicenses.length+" compte(s) inactifs ou désactivés conservent des licences.", l:"orange" });
   if (recos.length === 0)
-    recos.push({ t:"Aucune anomalie détectée", p:"Aucun forwarding externe, aucune app OAuth suspecte, aucune licence gaspillée.", l:"green" });
+    recos.push({ t:"Aucune anomalie détectée", p:"Aucune app OAuth suspecte, aucun admin sans compte dédié, aucune licence gaspillée.", l:"green" });
   el.innerHTML = recos.map(r => `<div class="reco${r.l==="red"?" crit":r.l==="green"?" ok":""}"><h4>${r.l==="green"?"✓":"⚠"} ${r.t}</h4><p>${r.p}</p></div>`).join("");
 }
 
@@ -268,15 +255,14 @@ function _filterWastedRender() {
   }).join("") || '<tr><td colspan="5" class="empty">Aucune licence gaspillée</td></tr>';
 }
 
-function _renderForwardingTable(d) {
-  set("cnt-forwarding", d.forwardingUsers.length + " boîte(s)");
-  const tbl = document.getElementById("tbl-forwarding"); if (!tbl) return;
-  tbl.innerHTML = d.forwardingUsers.map(f => `<tr>
-    <td>${f.user.displayName||"—"}</td>
-    <td class="mono">${f.user.userPrincipalName||"—"}</td>
-    <td class="mono" style="color:var(--red)">${f.forwardTo}</td>
-    <td><span class="pill pill-red"><span class="pill-dot"></span>${f.type}</span></td>
-  </tr>`).join("") || '<tr><td colspan="4" class="empty">Aucun forwarding externe détecté</td></tr>';
+function _renderAdminsTable(d) {
+  set("cnt-admins-o365", d.adminsWithMailbox.length + " admin(s)");
+  const tbl = document.getElementById("tbl-admins-o365"); if (!tbl) return;
+  tbl.innerHTML = d.adminsWithMailbox.map(a => `<tr>
+    <td>${a.displayName||"—"}</td>
+    <td class="mono">${a.userPrincipalName||"—"}</td>
+    <td><span class="pill pill-orange"><span class="pill-dot"></span>Compte avec boîte mail</span></td>
+  </tr>`).join("") || '<tr><td colspan="3" class="empty">Tous les admins ont un compte dédié</td></tr>';
 }
 
 function _renderOAuthTable(d) {
