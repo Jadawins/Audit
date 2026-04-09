@@ -8,6 +8,7 @@ const express    = require("express");
 const nodemailer = require("nodemailer");
 const fs         = require("fs");
 const path       = require("path");
+const https      = require("https");
 const { execSync } = require("child_process");
 
 const app  = express();
@@ -29,6 +30,8 @@ app.use((req, res, next) => {
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 const LEADS_FILE    = path.join(__dirname, "leads.json");
+const CLIENT_ID     = process.env.AZURE_CLIENT_ID     || "bd7f8225-61af-4ac0-bc6c-aaccd6a22fac";
+const CLIENT_SECRET = process.env.AZURE_CLIENT_SECRET || "";
 const SMTP_HOST     = process.env.SMTP_HOST     || "mail.auditms.fr";
 const SMTP_PORT_NUM = parseInt(process.env.SMTP_PORT) || 587;
 const SMTP_USER     = process.env.SMTP_USER     || "no-reply@auditms.fr";
@@ -36,6 +39,105 @@ const SMTP_PASS     = process.env.SMTP_PASS     || "";
 const LEAD_DEST     = process.env.LEAD_DEST     || "william@auditms.fr";
 const DEPLOY_SECRET = process.env.WEBHOOK_SECRET || "";
 const APP_DIR       = process.env.APP_DIR       || "/var/www/auditms/app";
+
+// ── Graph API (client_credentials) ────────────────────────────────────────────
+async function _getAppToken(tenantId) {
+  const body = new URLSearchParams({
+    grant_type:    "client_credentials",
+    client_id:     CLIENT_ID,
+    client_secret: CLIENT_SECRET,
+    scope:         "https://graph.microsoft.com/.default"
+  }).toString();
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: "login.microsoftonline.com",
+      path:     `/${tenantId}/oauth2/v2.0/token`,
+      method:   "POST",
+      headers:  { "Content-Type": "application/x-www-form-urlencoded", "Content-Length": Buffer.byteLength(body) }
+    }, res => {
+      let data = "";
+      res.on("data", c => data += c);
+      res.on("end", () => {
+        try { const j = JSON.parse(data); j.access_token ? resolve(j.access_token) : reject(new Error(j.error_description || "Token error")); }
+        catch(e) { reject(e); }
+      });
+    });
+    req.on("error", reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+async function _graphGet(token, path) {
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: "graph.microsoft.com",
+      path:     path.startsWith("/") ? "/v1.0" + path : path,
+      method:   "GET",
+      headers:  { Authorization: "Bearer " + token, Accept: "application/json" }
+    }, res => {
+      let data = "";
+      res.on("data", c => data += c);
+      res.on("end", () => {
+        try {
+          const j = JSON.parse(data);
+          if (res.statusCode === 403 || res.statusCode === 404) resolve(null);
+          else if (res.statusCode >= 400) reject(new Error("Graph " + res.statusCode + " — " + path));
+          else resolve(j);
+        } catch(e) { reject(e); }
+      });
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+// ── POST /api/inbox-rules ──────────────────────────────────────────────────────
+app.post("/api/inbox-rules", async (req, res) => {
+  try {
+    if (!CLIENT_SECRET) return res.status(503).json({ error: "Client secret non configuré" });
+
+    const { tenantId, users } = req.body;
+    if (!tenantId || !Array.isArray(users)) return res.status(400).json({ error: "tenantId et users requis" });
+
+    const token   = await _getAppToken(tenantId);
+    const results = [];
+
+    for (let i = 0; i < users.length; i++) {
+      const u = users[i];
+      // Pause anti-throttling toutes les 10 requêtes
+      if (i > 0 && i % 10 === 0) await new Promise(r => setTimeout(r, 200));
+      try {
+        const data = await _graphGet(token, "/users/" + u.id + "/mailFolders/inbox/messageRules");
+        if (!data) continue;
+        const rules = data.value || [];
+        const flagged = rules.filter(r => {
+          const a = r.actions || {};
+          return a.delete === true ||
+            a.forwardTo?.some(f => f.emailAddress?.address) ||
+            a.forwardAsAttachmentTo?.some(f => f.emailAddress?.address) ||
+            a.redirectTo?.some(f => f.emailAddress?.address) ||
+            (a.markAsRead && a.moveToFolder);
+        });
+        flagged.forEach(r => {
+          const a = r.actions || {};
+          const flags = [];
+          if (a.delete) flags.push("Suppression silencieuse");
+          if (a.forwardTo?.length) flags.push("Transfert: " + a.forwardTo.map(f => f.emailAddress?.address).join(", "));
+          if (a.redirectTo?.length) flags.push("Redirection: " + a.redirectTo.map(f => f.emailAddress?.address).join(", "));
+          if (a.markAsRead && a.moveToFolder) flags.push("Lu+Déplacer");
+          results.push({ userId: u.id, displayName: u.displayName, upn: u.userPrincipalName, ruleName: r.displayName, flags });
+        });
+      } catch {}
+    }
+
+    res.json({ results });
+  } catch (e) {
+    console.error("inbox-rules error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // ── POST /api/lead ─────────────────────────────────────────────────────────────
 app.post("/api/lead", async (req, res) => {

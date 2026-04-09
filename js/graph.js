@@ -53,6 +53,7 @@ async function _handleLoginRedirect() {
       if (t) {
         sessionStorage.setItem("tenant-name", t.displayName || "");
         sessionStorage.setItem("tenant-dom",  t.verifiedDomains?.find(d => d.isDefault)?.name || "");
+        sessionStorage.setItem("tenant-id",   t.id || "");
       }
     } catch {}
     return result.account;

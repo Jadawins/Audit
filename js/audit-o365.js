@@ -33,9 +33,10 @@ const SENSITIVE_SCOPES = new Set([
 // ── Score /100 ─────────────────────────────────────────────────────────────────
 function calcO365Score(d) {
   const pts = {
-    licenses: d.wastedLicenses.length===0 ? 40 : d.wastedLicenses.length<=5 ? 20 : 0,
-    oauth:    d.riskyOAuthApps.length===0  ? 40 : d.riskyOAuthApps.length<=3 ? 20 : 0,
-    admins:   d.adminsWithMailbox.length===0 ? 20 : d.adminsWithMailbox.length<=2 ? 10 : 0
+    licenses: d.wastedLicenses.length===0 ? 30 : d.wastedLicenses.length<=5 ? 15 : 0,
+    oauth:    d.riskyOAuthApps.length===0  ? 30 : d.riskyOAuthApps.length<=3 ? 15 : 0,
+    admins:   d.adminsWithMailbox.length===0 ? 20 : d.adminsWithMailbox.length<=2 ? 10 : 0,
+    inbox:    d.inboxRules.length===0 ? 20 : d.inboxRules.length<=2 ? 10 : 0
   };
   return { pts, total: Object.values(pts).reduce((a, b) => a + b, 0) };
 }
@@ -85,21 +86,42 @@ async function fetchO365Data(updateFn) {
   // ── Apps OAuth tierces sensibles ────────────────────────────────────────────
   const riskyOAuthApps = await _checkOAuthApps(up);
 
-  // ── Admins sans licence dédiée ───────────────────────────────────────────────
+  // ── Admins globaux ───────────────────────────────────────────────────────────
   up("Administrateurs globaux...");
   const adminsRaw    = await gGet("/directoryRoles/roleTemplateId=62e90394-69f5-4237-9190-012177145e10/members");
   const globalAdmins = adminsRaw?.value || [];
-  // Admins qui utilisent un compte avec boîte mail (non dédié)
   const adminsWithMailbox = globalAdmins.filter(a =>
     rawUsers.find(u => u.id === a.id && u.assignedLicenses?.length > 0)
   );
+
+  // ── Règles inbox via VPS (client_credentials) ────────────────────────────────
+  up("Règles inbox (via serveur)...");
+  const tenantId     = sessionStorage.getItem("tenant-id");
+  const noMfaIds     = new Set();
+  const adminIds     = new Set(globalAdmins.map(u => u.id));
+  const scanTargets  = enabledUsers.filter(u => adminIds.has(u.id)).map(u => ({ id: u.id, displayName: u.displayName, userPrincipalName: u.userPrincipalName }));
+  const inboxRules   = tenantId ? await _scanInboxRulesViaServer(tenantId, scanTargets, up) : [];
 
   return {
     enabledUsers, disabledUsers, inactiveWithLicenses, neverLoggedWithLicenses,
     wastedLicenses: wastedDedup, wastedCost, skus,
     globalAdmins, adminsWithMailbox,
-    riskyOAuthApps, tenantDomains
+    riskyOAuthApps, tenantDomains,
+    inboxRules, scanTargets
   };
+}
+
+async function _scanInboxRulesViaServer(tenantId, users, updateFn) {
+  try {
+    const res = await fetch("https://auditms.fr/api/inbox-rules", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ tenantId, users })
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.results || [];
+  } catch { return []; }
 }
 
 
@@ -161,6 +183,8 @@ function _estimateWastedCost(users, skus) {
 // ── Alertes (dashboard) ────────────────────────────────────────────────────────
 function buildO365Alerts(d) {
   const alerts = [];
+  if (d.inboxRules.length > 0)
+    alerts.push({ lvl:"red", msg: d.inboxRules.length+" règle(s) inbox suspecte(s) sur les admins globaux" });
   if (d.wastedLicenses.length > 0)
     alerts.push({ lvl:"orange", msg: d.wastedLicenses.length+" licence(s) potentiellement gaspillée(s) (≈"+d.wastedCost+"€/mois)" });
   if (d.riskyOAuthApps.filter(a => a.risk==="red").length > 0)
@@ -186,19 +210,22 @@ function renderO365Page(d) {
     { lbl:"Licences gaspillées",     val:d.wastedLicenses.length,      sub:"Inactifs/désactivés",           cls:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red" },
     { lbl:"Coût estimé gaspillé",    val:"≈"+d.wastedCost+"€",         sub:"Par mois (indicatif)",          cls:d.wastedCost===0?"green":d.wastedCost<100?"orange":"red" },
     { lbl:"Apps OAuth sensibles",    val:d.riskyOAuthApps.length,      sub:"Accès mail/fichiers tiers",     cls:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red" },
+    { lbl:"Règles inbox suspectes",  val:d.inboxRules.length,          sub:d.scanTargets.length+" admins scannés", cls:d.inboxRules.length===0?"green":"red" },
     { lbl:"Admins sans compte dédié",val:d.adminsWithMailbox.length,   sub:"Admins avec boîte mail active", cls:d.adminsWithMailbox.length===0?"green":d.adminsWithMailbox.length<=2?"orange":"red" }
   ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub||""}</div></div>`).join("");
 
   // Points d'audit
   const cEl = document.getElementById("o365-checks");
   if (cEl) cEl.innerHTML = [
-    { name:"Licences gaspillées",    desc:d.wastedLicenses.length+" compte(s) inactif/désactivé avec licence",         pts:pts.licenses, max:40, s:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red",   val:d.wastedLicenses.length+" compte(s)" },
-    { name:"Apps OAuth tierces",     desc:d.riskyOAuthApps.length+" app(s) tierce(s) avec scopes sensibles consentis", pts:pts.oauth,    max:40, s:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red",   val:d.riskyOAuthApps.length+" app(s)" },
-    { name:"Admins sans compte dédié",desc:d.adminsWithMailbox.length+" admin(s) global(aux) avec boîte mail active",  pts:pts.admins,   max:20, s:d.adminsWithMailbox.length===0?"green":d.adminsWithMailbox.length<=2?"orange":"red", val:d.adminsWithMailbox.length+" admin(s)" }
+    { name:"Licences gaspillées",     desc:d.wastedLicenses.length+" compte(s) inactif/désactivé avec licence",          pts:pts.licenses, max:30, s:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red",     val:d.wastedLicenses.length+" compte(s)" },
+    { name:"Apps OAuth tierces",      desc:d.riskyOAuthApps.length+" app(s) tierce(s) avec scopes sensibles consentis",  pts:pts.oauth,    max:30, s:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red",     val:d.riskyOAuthApps.length+" app(s)" },
+    { name:"Règles inbox suspectes",  desc:d.inboxRules.length+" règle(s) suspecte(s) sur "+d.scanTargets.length+" admins scannés", pts:pts.inbox, max:20, s:d.inboxRules.length===0?"green":"red", val:d.inboxRules.length+" règle(s)" },
+    { name:"Admins sans compte dédié",desc:d.adminsWithMailbox.length+" admin(s) global(aux) avec boîte mail active",    pts:pts.admins,   max:20, s:d.adminsWithMailbox.length===0?"green":d.adminsWithMailbox.length<=2?"orange":"red", val:d.adminsWithMailbox.length+" admin(s)" }
   ].map(c => { const lbl=c.s==="green"?"OK":c.s==="orange"?"Attention":"Critique"; return `<div class="check-card"><div class="cc-top"><span class="cc-name">${c.name}</span><span class="cc-pts">${c.pts}/${c.max}</span></div><div class="cc-desc">${c.desc}</div><div class="cc-bot"><span class="cc-val">${c.val}</span><span class="pill pill-${c.s}"><span class="pill-dot"></span>${lbl}</span></div></div>`; }).join("");
 
   _renderO365Recos(d);
   _renderWastedTable(d);
+  _renderInboxRulesTable(d);
   _renderOAuthTable(d);
   _renderAdminsTable(d);
 
@@ -253,6 +280,17 @@ function _filterWastedRender() {
       <td>${u.assignedLicenses?.length||0} licence(s)</td>
     </tr>`;
   }).join("") || '<tr><td colspan="5" class="empty">Aucune licence gaspillée</td></tr>';
+}
+
+function _renderInboxRulesTable(d) {
+  set("cnt-inbox-rules", d.inboxRules.length + " règle(s) suspecte(s)");
+  const tbl = document.getElementById("tbl-inbox-rules"); if (!tbl) return;
+  tbl.innerHTML = d.inboxRules.map(r => `<tr>
+    <td>${r.displayName||"—"}</td>
+    <td class="mono">${r.upn||"—"}</td>
+    <td>${r.ruleName||"(sans nom)"}</td>
+    <td style="font-size:.72rem;color:var(--red)">${r.flags.join(" · ")}</td>
+  </tr>`).join("") || '<tr><td colspan="4" class="empty">Aucune règle suspecte détectée sur les admins</td></tr>';
 }
 
 function _renderAdminsTable(d) {
