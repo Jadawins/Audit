@@ -12,6 +12,7 @@ const https      = require("https");
 const { execSync } = require("child_process");
 const rateLimit  = require("express-rate-limit");
 const { LeadSchema, InboxRulesSchema } = require("./validation");
+const logger     = require("./logger");
 
 const app  = express();
 const PORT = 3001;
@@ -27,6 +28,21 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   }
   if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+// ── Logging des requêtes ───────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    logger.info({
+      method: req.method,
+      path:   req.path,
+      status: res.statusCode,
+      ms:     Date.now() - start,
+      ip:     req.headers["x-forwarded-for"] || req.socket.remoteAddress
+    });
+  });
   next();
 });
 
@@ -61,7 +77,7 @@ const APP_DIR       = process.env.APP_DIR       || "/var/www/auditms/app";
 
 // Vérification des variables critiques au démarrage
 if (!DEPLOY_SECRET) {
-  console.error("FATAL: WEBHOOK_SECRET non défini — arrêt du serveur.");
+  logger.fatal("WEBHOOK_SECRET non défini — arrêt du serveur.");
   process.exit(1);
 }
 
@@ -165,7 +181,7 @@ app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
 
     res.json({ results });
   } catch (e) {
-    console.error("inbox-rules error:", e);
+    logger.error({ err: e.message }, "inbox-rules error");
     res.status(500).json({ error: e.message });
   }
 });
@@ -218,14 +234,14 @@ app.post("/api/lead", leadLimiter, async (req, res) => {
           ].join("\n")
         });
       } catch (mailErr) {
-        console.error("Email error:", mailErr.message);
+        logger.error({ err: mailErr.message }, "Email error");
         // Ne pas faire échouer la requête si l'email plante
       }
     }
 
     res.json({ success: true });
   } catch (e) {
-    console.error("Lead error:", e);
+    logger.error({ err: e.message }, "Lead error");
     res.status(500).json({ error: e.message });
   }
 });
@@ -244,4 +260,4 @@ app.post("/api/deploy", (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Audit API on port ${PORT}`));
+app.listen(PORT, () => logger.info(`Audit API on port ${PORT}`));
