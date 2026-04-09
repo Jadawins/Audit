@@ -8,18 +8,47 @@ let _o365Data = null;
 let _o365f    = { type: "all" };
 let _oauthf   = { type: "all" };
 
-// Prix mensuels indicatifs (€ HT) par SKU connu
+// Prix mensuels indicatifs (€ HT) par SKU — 0 = gratuit/inclus (ignoré pour les licences gaspillées)
 const LICENSE_PRICES = {
-  "O365_BUSINESS_PREMIUM":   22,
-  "SPB":                     22,
-  "ENTERPRISEPACK":          32,
-  "ENTERPRISEPREMIUM":       54,
-  "EXCHANGESTANDARD":        4,
-  "EXCHANGEENTERPRISE":      8,
-  "TEAMS_EXPLORATORY":       0,
-  "FLOW_FREE":               0,
-  "POWER_BI_STANDARD":       0,
+  // Microsoft 365
+  "O365_BUSINESS_ESSENTIALS":  6,
+  "O365_BUSINESS_PREMIUM":    22,
+  "O365_BUSINESS":            10,
+  "SPB":                      22,  // Microsoft 365 Business Premium
+  "SPE_E3":                   32,  // M365 E3
+  "SPE_E5":                   54,  // M365 E5
+  // Office 365
+  "ENTERPRISEPACK":           32,  // O365 E3
+  "ENTERPRISEPREMIUM":        54,  // O365 E5
+  "STANDARDPACK":             10,  // O365 E1
+  // Exchange
+  "EXCHANGESTANDARD":          4,
+  "EXCHANGEENTERPRISE":        8,
+  "EXCHANGEARCHIVE_ADDON":     3,
+  // Azure AD
+  "AAD_PREMIUM":               6,  // Azure AD P1
+  "AAD_PREMIUM_P2":           10,  // Azure AD P2
+  // Intune
+  "INTUNE_A":                  6,
+  // Power BI
+  "POWER_BI_PRO":             10,
+  // Visio / Project
+  "VISIOCLIENT":              14,
+  "PROJECTPREMIUM":           30,
+  // Gratuit / inclus → ignorés
+  "TEAMS_EXPLORATORY":         0,
+  "FLOW_FREE":                 0,
+  "POWER_BI_STANDARD":         0,
+  "POWERAPPS_VIRAL":           0,
+  "MCOEV_VIRTUALUSER":         0,
+  "WIN10_PRO_ENT_SUB":         0,
+  "WINDOWS_STORE":             0,
+  "DEVELOPERPACK_E5":          0,
+  "RIGHTSMANAGEMENT_ADHOC":    0,
 };
+
+// SKUs considérés comme gratuits/non facturés — on les ignore dans le calcul des licences gaspillées
+const FREE_SKUS = new Set(Object.entries(LICENSE_PRICES).filter(([,v]) => v === 0).map(([k]) => k));
 
 const SENSITIVE_SCOPES = new Set([
   "Mail.Read","Mail.ReadWrite","Mail.ReadBasic",
@@ -60,10 +89,18 @@ async function fetchO365Data(updateFn) {
     (orgRaw?.value?.[0]?.verifiedDomains || []).map(d => d.name.toLowerCase())
   );
 
-  // ── Licences gaspillées ─────────────────────────────────────────────────────
-  const d90           = new Date(Date.now() - 90 * 864e5);
-  const enabledUsers  = rawUsers.filter(u => u.accountEnabled && u.assignedLicenses?.length > 0);
-  const disabledUsers = rawUsers.filter(u => !u.accountEnabled && u.assignedLicenses?.length > 0);
+  // ── Licences gaspillées (licences payantes uniquement) ──────────────────────
+  const d90 = new Date(Date.now() - 90 * 864e5);
+
+  // Vérifie si un utilisateur a au moins une licence payante
+  const _hasPaidLicense = u => (u.assignedLicenses || []).some(lic => {
+    const sku = skus.find(s => s.skuId === lic.skuId);
+    if (!sku) return true; // SKU inconnu → considéré payant par précaution
+    return !FREE_SKUS.has(sku.skuPartNumber);
+  });
+
+  const enabledUsers  = rawUsers.filter(u => u.accountEnabled && _hasPaidLicense(u));
+  const disabledUsers = rawUsers.filter(u => !u.accountEnabled && _hasPaidLicense(u));
 
   const inactiveWithLicenses    = enabledUsers.filter(u =>
     u.signInActivity?.lastSignInDateTime &&
