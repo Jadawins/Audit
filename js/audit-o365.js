@@ -95,12 +95,18 @@ async function fetchO365Data(updateFn) {
   );
 
   // ── Règles inbox via VPS (client_credentials) ────────────────────────────────
-  up("Règles inbox (via serveur)...");
-  const tenantId     = sessionStorage.getItem("tenant-id");
-  const noMfaIds     = new Set();
-  const adminIds     = new Set(globalAdmins.map(u => u.id));
-  const scanTargets  = enabledUsers.filter(u => adminIds.has(u.id)).map(u => ({ id: u.id, displayName: u.displayName, userPrincipalName: u.userPrincipalName }));
-  const inboxRules   = tenantId ? await _scanInboxRulesViaServer(tenantId, scanTargets, up) : [];
+  up("Données MFA...");
+  const authMethods = await gAll("/reports/authenticationMethods/userRegistrationDetails?$top=999");
+  const noMfaIds    = new Set(authMethods.filter(u => !u.isMfaRegistered).map(u => u.id));
+  const adminIds    = new Set(globalAdmins.map(u => u.id));
+  const priorityIds = new Set([...adminIds, ...noMfaIds]);
+  const scanTargets = enabledUsers
+    .filter(u => priorityIds.has(u.id))
+    .map(u => ({ id: u.id, displayName: u.displayName, userPrincipalName: u.userPrincipalName }));
+
+  const tenantId  = sessionStorage.getItem("tenant-id");
+  up("Règles inbox (" + scanTargets.length + " comptes prioritaires via serveur)...");
+  const inboxRules = tenantId ? await _scanInboxRulesViaServer(tenantId, scanTargets, up) : [];
 
   return {
     enabledUsers, disabledUsers, inactiveWithLicenses, neverLoggedWithLicenses,
@@ -210,7 +216,7 @@ function renderO365Page(d) {
     { lbl:"Licences gaspillées",     val:d.wastedLicenses.length,      sub:"Inactifs/désactivés",           cls:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red" },
     { lbl:"Coût estimé gaspillé",    val:"≈"+d.wastedCost+"€",         sub:"Par mois (indicatif)",          cls:d.wastedCost===0?"green":d.wastedCost<100?"orange":"red" },
     { lbl:"Apps OAuth sensibles",    val:d.riskyOAuthApps.length,      sub:"Accès mail/fichiers tiers",     cls:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red" },
-    { lbl:"Règles inbox suspectes",  val:d.inboxRules.length,          sub:d.scanTargets.length+" admins scannés", cls:d.inboxRules.length===0?"green":"red" },
+    { lbl:"Règles inbox suspectes",  val:d.inboxRules.length,          sub:d.scanTargets.length+" admins/sans-MFA scannés", cls:d.inboxRules.length===0?"green":"red" },
     { lbl:"Admins sans compte dédié",val:d.adminsWithMailbox.length,   sub:"Admins avec boîte mail active", cls:d.adminsWithMailbox.length===0?"green":d.adminsWithMailbox.length<=2?"orange":"red" }
   ].map(m => `<div class="metric ${m.cls}"><div class="metric-lbl">${m.lbl}</div><div class="metric-val">${m.val}</div><div class="metric-sub">${m.sub||""}</div></div>`).join("");
 
@@ -219,7 +225,7 @@ function renderO365Page(d) {
   if (cEl) cEl.innerHTML = [
     { name:"Licences gaspillées",     desc:d.wastedLicenses.length+" compte(s) inactif/désactivé avec licence",          pts:pts.licenses, max:30, s:d.wastedLicenses.length===0?"green":d.wastedLicenses.length<=5?"orange":"red",     val:d.wastedLicenses.length+" compte(s)" },
     { name:"Apps OAuth tierces",      desc:d.riskyOAuthApps.length+" app(s) tierce(s) avec scopes sensibles consentis",  pts:pts.oauth,    max:30, s:d.riskyOAuthApps.length===0?"green":d.riskyOAuthApps.length<=3?"orange":"red",     val:d.riskyOAuthApps.length+" app(s)" },
-    { name:"Règles inbox suspectes",  desc:d.inboxRules.length+" règle(s) suspecte(s) sur "+d.scanTargets.length+" admins scannés", pts:pts.inbox, max:20, s:d.inboxRules.length===0?"green":"red", val:d.inboxRules.length+" règle(s)" },
+    { name:"Règles inbox suspectes",  desc:d.inboxRules.length+" règle(s) suspecte(s) sur "+d.scanTargets.length+" comptes prioritaires (admins + sans MFA)", pts:pts.inbox, max:20, s:d.inboxRules.length===0?"green":"red", val:d.inboxRules.length+" règle(s)" },
     { name:"Admins sans compte dédié",desc:d.adminsWithMailbox.length+" admin(s) global(aux) avec boîte mail active",    pts:pts.admins,   max:20, s:d.adminsWithMailbox.length===0?"green":d.adminsWithMailbox.length<=2?"orange":"red", val:d.adminsWithMailbox.length+" admin(s)" }
   ].map(c => { const lbl=c.s==="green"?"OK":c.s==="orange"?"Attention":"Critique"; return `<div class="check-card"><div class="cc-top"><span class="cc-name">${c.name}</span><span class="cc-pts">${c.pts}/${c.max}</span></div><div class="cc-desc">${c.desc}</div><div class="cc-bot"><span class="cc-val">${c.val}</span><span class="pill pill-${c.s}"><span class="pill-dot"></span>${lbl}</span></div></div>`; }).join("");
 
