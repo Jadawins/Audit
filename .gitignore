@@ -1,0 +1,15 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement
+.env
+
+# Données locales
+leads.json
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
