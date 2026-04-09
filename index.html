@@ -35,6 +35,105 @@
       </button>
       <span style="font-size:.65rem;color:var(--text2)">Lecture seule · Microsoft Graph API · sessionStorage uniquement</span>
     </div>
+
+    <!-- ── SECTION INFO ───────────────────────────────────── -->
+    <div class="login-info">
+
+      <!-- Ce que l'outil analyse -->
+      <div class="li-block">
+        <div class="li-title">Ce que l'outil analyse</div>
+        <div class="li-desc">Audit MS interroge votre tenant Microsoft 365 via l'API Graph en lecture seule et calcule un score de sécurité sur 4 domaines.</div>
+        <div class="li-modules">
+          <span class="li-mod" style="color:var(--acc2)">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Entra ID
+          </span>
+          <span class="li-mod" style="color:var(--green)">
+            <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            Intune
+          </span>
+          <span class="li-mod" style="color:var(--orange)">
+            <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Microsoft 365
+          </span>
+          <span class="li-mod" style="color:var(--purple)">
+            <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+            GPO
+          </span>
+        </div>
+      </div>
+
+      <!-- Données & confidentialité -->
+      <div class="li-block">
+        <div class="li-title">Vos données</div>
+        <div class="li-rows">
+          <div class="li-row li-ok">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Toutes les données restent dans votre navigateur (<code>sessionStorage</code>)</span>
+          </div>
+          <div class="li-row li-ok">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Aucune donnée n'est transmise à un serveur tiers</span>
+          </div>
+          <div class="li-row li-ok">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Accès en lecture seule uniquement — aucune modification n'est effectuée</span>
+          </div>
+          <div class="li-row li-ok">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Les données sont effacées à la fermeture de l'onglet</span>
+          </div>
+          <div class="li-row li-no">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <span>Vos utilisateurs, appareils ou emails ne sont jamais stockés sur nos serveurs</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rôles requis -->
+      <div class="li-block">
+        <div class="li-title">Rôle requis sur le tenant</div>
+        <div class="li-desc">Le compte utilisé pour la connexion doit disposer d'un des rôles suivants :</div>
+        <div class="li-rows">
+          <div class="li-row li-ok">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Administrateur général</strong> <span style="color:var(--text2)">(Global Administrator)</span> — accès complet à tous les modules</span>
+          </div>
+          <div class="li-row li-ok">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><strong>Lecteur général</strong> <span style="color:var(--text2)">(Global Reader)</span> + <strong>Administrateur Intune</strong> — pour les modules Entra ID, M365 et Intune</span>
+          </div>
+          <div class="li-row li-warn">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Les modules auxquels le compte n'a pas accès afficheront <strong>N/A</strong> au lieu d'un score</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Permissions Graph -->
+      <div class="li-block">
+        <div class="li-title">Permissions Microsoft Graph demandées</div>
+        <div class="li-desc">Lors de la première connexion, Microsoft vous demandera d'approuver les permissions suivantes. Toutes sont en <strong>lecture seule</strong>.</div>
+        <div class="li-perms">
+          <div class="li-perm"><span class="li-perm-name">User.Read.All</span><span class="li-perm-desc">Lire tous les utilisateurs et leurs attributs</span></div>
+          <div class="li-perm"><span class="li-perm-name">Directory.Read.All</span><span class="li-perm-desc">Lire l'annuaire Azure AD complet</span></div>
+          <div class="li-perm"><span class="li-perm-name">Policy.Read.All</span><span class="li-perm-desc">Lire les politiques d'accès conditionnel</span></div>
+          <div class="li-perm"><span class="li-perm-name">AuditLog.Read.All</span><span class="li-perm-desc">Lire les journaux d'audit et de connexion</span></div>
+          <div class="li-perm"><span class="li-perm-name">Organization.Read.All</span><span class="li-perm-desc">Lire les informations du tenant</span></div>
+          <div class="li-perm"><span class="li-perm-name">RoleManagement.Read.All</span><span class="li-perm-desc">Lire les rôles et leurs membres</span></div>
+          <div class="li-perm"><span class="li-perm-name">UserAuthenticationMethod.Read.All</span><span class="li-perm-desc">Lire les méthodes d'authentification (MFA)</span></div>
+          <div class="li-perm"><span class="li-perm-name">SecurityEvents.Read.All</span><span class="li-perm-desc">Lire le Secure Score Microsoft</span></div>
+          <div class="li-perm"><span class="li-perm-name">DeviceManagementManagedDevices.Read.All</span><span class="li-perm-desc">Lire les appareils Intune</span></div>
+          <div class="li-perm"><span class="li-perm-name">DeviceManagementConfiguration.Read.All</span><span class="li-perm-desc">Lire les politiques de conformité Intune</span></div>
+          <div class="li-perm"><span class="li-perm-name">MailboxSettings.Read</span><span class="li-perm-desc">Lire les paramètres des boîtes mail</span></div>
+          <div class="li-perm"><span class="li-perm-name">Mail.ReadBasic</span><span class="li-perm-desc">Lire les règles de boîte de réception</span></div>
+          <div class="li-perm"><span class="li-perm-name">DelegatedPermissionGrant.ReadWrite.All</span><span class="li-perm-desc">Lire les applications OAuth tierces autorisées</span></div>
+        </div>
+      </div>
+
+    </div>
+    <!-- ── FIN SECTION INFO ───────────────────────────────── -->
+
   </div>
 </div>
 
