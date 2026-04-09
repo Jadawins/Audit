@@ -10,6 +10,7 @@ const fs         = require("fs");
 const path       = require("path");
 const https      = require("https");
 const { execSync } = require("child_process");
+const rateLimit  = require("express-rate-limit");
 
 const app  = express();
 const PORT = 3001;
@@ -26,6 +27,23 @@ app.use((req, res, next) => {
   }
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
+});
+
+// ── Rate limiters ──────────────────────────────────────────────────────────────
+const leadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Trop de demandes, réessayez dans 15 minutes." }
+});
+
+const graphLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Limite de requêtes dépassée, réessayez dans 1 minute." }
 });
 
 // ── Config ─────────────────────────────────────────────────────────────────────
@@ -94,7 +112,7 @@ async function _graphGet(token, path) {
 }
 
 // ── POST /api/inbox-rules ──────────────────────────────────────────────────────
-app.post("/api/inbox-rules", async (req, res) => {
+app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
   try {
     if (!CLIENT_SECRET) return res.status(503).json({ error: "Client secret non configuré" });
 
@@ -140,7 +158,7 @@ app.post("/api/inbox-rules", async (req, res) => {
 });
 
 // ── POST /api/lead ─────────────────────────────────────────────────────────────
-app.post("/api/lead", async (req, res) => {
+app.post("/api/lead", leadLimiter, async (req, res) => {
   try {
     const { prenom, nom, societe, email, telephone, scores } = req.body;
     if (!email || !prenom) return res.status(400).json({ error: "Champs requis manquants" });
@@ -205,7 +223,7 @@ app.post("/api/deploy", (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    execSync(`cd ${APP_DIR} && git pull origin main 2>&1`, { timeout: 30000 });
+    execSync(`cd ${APP_DIR} && git pull origin main && npm install --omit=dev 2>&1`, { timeout: 60000 });
     res.json({ success: true, message: "Deployed" });
   } catch (e) {
     res.status(500).json({ error: e.message });
