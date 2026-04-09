@@ -59,6 +59,12 @@ const LEAD_DEST     = process.env.LEAD_DEST     || "william@auditms.fr";
 const DEPLOY_SECRET = process.env.WEBHOOK_SECRET || "";
 const APP_DIR       = process.env.APP_DIR       || "/var/www/auditms/app";
 
+// Vérification des variables critiques au démarrage
+if (!DEPLOY_SECRET) {
+  console.error("FATAL: WEBHOOK_SECRET non défini — arrêt du serveur.");
+  process.exit(1);
+}
+
 // ── Graph API (client_credentials) ────────────────────────────────────────────
 async function _getAppToken(tenantId) {
   const body = new URLSearchParams({
