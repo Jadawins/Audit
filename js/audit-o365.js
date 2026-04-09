@@ -137,13 +137,13 @@ async function _checkOAuthApps(updateFn) {
     (g.scope || "").split(" ").some(s => SENSITIVE_SCOPES.has(s))
   );
 
-  // Lookup noms des service principals (unique clientIds, max 40)
+  // Lookup noms des service principals — en parallèle (max 40)
   const clientIds = [...new Set(flaggedGrants.map(g => g.clientId))].slice(0, 40);
+  const spResults = await Promise.all(
+    clientIds.map(id => gGet("/servicePrincipals/" + id + "?$select=id,displayName,publisherName,verifiedPublisher").catch(() => null))
+  );
   const spMap = {};
-  for (const id of clientIds) {
-    const sp = await gGet("/servicePrincipals/" + id + "?$select=id,displayName,publisherName,verifiedPublisher");
-    if (sp) spMap[id] = sp;
-  }
+  spResults.forEach(sp => { if (sp?.id) spMap[sp.id] = sp; });
 
   // Dédupliquer par app (consentType AllPrincipals > Principal)
   const appMap = new Map();
