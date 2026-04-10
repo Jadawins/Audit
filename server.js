@@ -14,7 +14,7 @@ const { execSync } = require("child_process");
 const rateLimit  = require("express-rate-limit");
 const { LeadSchema, InboxRulesSchema } = require("./validation");
 const logger     = require("./logger");
-const { saveLead } = require("./db");
+const { saveLead, getLeads } = require("./db");
 const metrics    = require("./metrics");
 
 const app  = express();
@@ -74,8 +74,9 @@ const SMTP_PORT_NUM = parseInt(process.env.SMTP_PORT) || 587;
 const SMTP_USER     = process.env.SMTP_USER     || "no-reply@auditms.fr";
 const SMTP_PASS     = process.env.SMTP_PASS     || "";
 const LEAD_DEST     = process.env.LEAD_DEST     || "william@auditms.fr";
-const DEPLOY_SECRET = process.env.WEBHOOK_SECRET || "";
-const APP_DIR       = process.env.APP_DIR       || "/var/www/auditms/app";
+const DEPLOY_SECRET  = process.env.WEBHOOK_SECRET  || "";
+const APP_DIR        = process.env.APP_DIR         || "/var/www/auditms/app";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD  || "";
 
 // Vérification des variables critiques au démarrage
 if (!DEPLOY_SECRET) {
@@ -221,7 +222,7 @@ app.post("/lead", leadLimiter, async (req, res) => {
 
     // 1. Sauvegarde en base MongoDB
     const lead = {
-      prenom, nom, societe, email, telephone, commentaire, scores, alerts,
+      prenom, nom, societe, email, telephone, commentaire, scores, alerts, details,
       ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress
     };
     await saveLead(lead);
@@ -331,6 +332,40 @@ app.post("/deploy", (req, res) => {
       logger.error({ err: e.message }, "Deploy échoué");
     }
   }, 100);
+});
+
+// ── Admin : login ─────────────────────────────────────────────────────────────
+const crypto = require("crypto");
+const ADMIN_TOKENS = new Map(); // token → expiry
+
+app.post("/admin/login", (req, res) => {
+  const { password } = req.body || {};
+  if (!ADMIN_PASSWORD || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: "Mot de passe incorrect." });
+  }
+  const token  = crypto.randomBytes(32).toString("hex");
+  const expiry = Date.now() + 8 * 60 * 60 * 1000; // 8h
+  ADMIN_TOKENS.set(token, expiry);
+  res.json({ token });
+});
+
+function _adminAuth(req, res, next) {
+  const token = (req.headers.authorization || "").replace("Bearer ", "");
+  const expiry = ADMIN_TOKENS.get(token);
+  if (!expiry || Date.now() > expiry) return res.status(401).json({ error: "Non autorisé." });
+  next();
+}
+
+// ── Admin : leads ─────────────────────────────────────────────────────────────
+app.get("/admin/leads", _adminAuth, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const skip  = parseInt(req.query.skip) || 0;
+    const leads = await getLeads({ limit, skip });
+    res.json({ leads });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── 404 ────────────────────────────────────────────────────────────────────────

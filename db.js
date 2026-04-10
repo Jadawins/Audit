@@ -17,6 +17,8 @@ async function connect() {
   client = new MongoClient(MONGODB_URI);
   await client.connect();
   db = client.db(DB_NAME);
+  // TTL index : suppression automatique après 7 jours
+  await db.collection("leads").createIndex({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 3600, background: true });
   logger.info("MongoDB connecté");
   return db;
 }
@@ -31,4 +33,15 @@ async function saveLead(lead) {
   return result.insertedId;
 }
 
-module.exports = { connect, saveLead };
+async function getLeads({ limit = 50, skip = 0 } = {}) {
+  const database = await connect();
+  if (!database) return [];
+  return database.collection("leads")
+    .find({})
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .toArray();
+}
+
+module.exports = { connect, saveLead, getLeads };

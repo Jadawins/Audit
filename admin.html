@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — AuditMS</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/auditms.css">
+<style>
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); }
+  .admin-login { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .admin-login-box { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:2.5rem; width:100%; max-width:380px; }
+  .admin-login-box h2 { font-size:1.1rem; margin-bottom:1.5rem; }
+  .admin-input { width:100%; padding:.65rem .85rem; background:var(--bg2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:.85rem; font-family:var(--sans); box-sizing:border-box; margin-bottom:.75rem; }
+  .admin-input:focus { outline:none; border-color:var(--accent); }
+  #admin-app { display:none; max-width:1200px; margin:0 auto; padding:2rem 1.5rem; }
+  .admin-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; }
+  .admin-header h1 { font-size:1.2rem; font-weight:600; }
+  .admin-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; }
+  .stat-val { font-size:1.8rem; font-weight:600; color:var(--accent); font-family:var(--mono); }
+  .stat-lbl { font-size:.72rem; color:var(--text2); margin-top:.25rem; }
+  .leads-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+  .leads-table th { text-align:left; padding:.6rem .85rem; border-bottom:2px solid var(--border); color:var(--text2); font-weight:500; white-space:nowrap; }
+  .leads-table td { padding:.65rem .85rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  .leads-table tr:hover td { background:var(--bg2); }
+  .score-badge { display:inline-block; padding:.15rem .5rem; border-radius:4px; font-family:var(--mono); font-size:.72rem; }
+  .score-good { background:#22c55e18; color:#22c55e; }
+  .score-mid  { background:#f59e0b18; color:#f59e0b; }
+  .score-bad  { background:#ef444418; color:#ef4444; }
+  .detail-toggle { cursor:pointer; color:var(--accent); font-size:.72rem; text-decoration:underline; white-space:nowrap; }
+  .detail-panel { display:none; margin-top:.5rem; background:var(--bg2); border-radius:6px; padding:.75rem; font-size:.72rem; line-height:1.6; }
+  .detail-panel.open { display:block; }
+  .detail-section { margin-bottom:.5rem; }
+  .detail-section strong { color:var(--text2); display:block; margin-bottom:.2rem; }
+  .detail-item { padding:.1rem 0; color:var(--text); }
+  .tag { display:inline-block; padding:.1rem .4rem; border-radius:3px; font-size:.65rem; margin:.1rem; }
+  .tag-red { background:#ef444418; color:#ef4444; }
+  .tag-orange { background:#f59e0b18; color:#f59e0b; }
+  .err { color:var(--red); font-size:.8rem; margin-top:.5rem; }
+  .pagination { display:flex; gap:.5rem; margin-top:1.5rem; justify-content:center; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="admin-login" id="admin-login">
+  <div class="admin-login-box">
+    <h2>AUDIT <span style="color:var(--accent)">MS</span> · Admin</h2>
+    <input class="admin-input" type="password" id="admin-pwd" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="btn-primary" style="width:100%" onclick="adminLogin()">Connexion</button>
+    <div class="err" id="admin-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="admin-app">
+  <div class="admin-header">
+    <h1>Tableau de bord admin</h1>
+    <button class="btn-sm" onclick="adminLogout()">Déconnexion</button>
+  </div>
+
+  <div class="admin-stats" id="admin-stats"></div>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+    <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-weight:500;font-size:.9rem">Leads</span>
+      <button class="btn-sm" onclick="loadLeads(0)">↺ Actualiser</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="leads-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Contact</th>
+            <th>Société</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Scores</th>
+            <th>Alertes</th>
+            <th>Détails</th>
+          </tr>
+        </thead>
+        <tbody id="leads-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<script>
+const API = "https://auditms.fr/api";
+let _token = null;
+let _currentSkip = 0;
+const PAGE_SIZE = 50;
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function adminLogin() {
+  const pwd = document.getElementById("admin-pwd").value;
+  const err = document.getElementById("admin-err");
+  err.textContent = "";
+  try {
+    const r = await fetch(API + "/admin/login", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pwd })
+    });
+    const data = await r.json();
+    if (!r.ok) { err.textContent = data.error || "Erreur"; return; }
+    _token = data.token;
+    sessionStorage.setItem("admin-token", _token);
+    showApp();
+  } catch { err.textContent = "Impossible de se connecter."; }
+}
+
+function adminLogout() {
+  _token = null;
+  sessionStorage.removeItem("admin-token");
+  document.getElementById("admin-login").style.display = "flex";
+  document.getElementById("admin-app").style.display   = "none";
+}
+
+function showApp() {
+  document.getElementById("admin-login").style.display = "none";
+  document.getElementById("admin-app").style.display   = "block";
+  loadLeads(0);
+}
+
+// ── Leads ─────────────────────────────────────────────────────────────────────
+async function loadLeads(skip) {
+  _currentSkip = skip;
+  const tbody = document.getElementById("leads-tbody");
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:2rem">Chargement...</td></tr>';
+  try {
+    const r = await fetch(API + "/admin/leads?limit=" + PAGE_SIZE + "&skip=" + skip, {
+      headers: { Authorization: "Bearer " + _token }
+    });
+    if (r.status === 401) { adminLogout(); return; }
+    const { leads } = await r.json();
+    renderStats(leads);
+    renderLeads(leads);
+    renderPagination(leads.length);
+  } catch { tbody.innerHTML = '<tr><td colspan="8" style="color:var(--red);padding:1rem">Erreur de chargement.</td></tr>'; }
+}
+
+function renderStats(leads) {
+  const total   = leads.length;
+  const today   = new Date().toISOString().slice(0,10);
+  const todayN  = leads.filter(l => l.createdAt?.startsWith?.(today) || new Date(l.createdAt).toISOString().slice(0,10) === today).length;
+  const avgScore = leads.filter(l => l.scores).map(l => {
+    const vals = Object.values(l.scores).filter(v => typeof v === "number");
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  }).filter(v => v !== null);
+  const avg = avgScore.length ? Math.round(avgScore.reduce((a,b)=>a+b,0)/avgScore.length) : "—";
+
+  document.getElementById("admin-stats").innerHTML = `
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Leads (page)</div></div>
+    <div class="stat-card"><div class="stat-val">${todayN}</div><div class="stat-lbl">Aujourd'hui</div></div>
+    <div class="stat-card"><div class="stat-val">${avg}${typeof avg==="number"?"%":""}</div><div class="stat-lbl">Score moyen</div></div>
+  `;
+}
+
+function _scoreBadge(v) {
+  if (v == null) return "—";
+  const cls = v >= 80 ? "score-good" : v >= 60 ? "score-mid" : "score-bad";
+  return `<span class="score-badge ${cls}">${v}</span>`;
+}
+
+function renderLeads(leads) {
+  const tbody = document.getElementById("leads-tbody");
+  if (!leads.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text2);padding:2rem">Aucun lead.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = leads.map((l, i) => {
+    const date  = new Date(l.createdAt).toLocaleString("fr-FR", {day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
+    const scores = l.scores ? Object.entries(l.scores).map(([k,v]) => `<div>${k} : ${_scoreBadge(v)}</div>`).join("") : "—";
+    const alerts = l.alerts?.length
+      ? l.alerts.map(a => `<span class="tag tag-${a.lvl}">${a.msg}</span>`).join("")
+      : '<span style="color:var(--text2)">—</span>';
+    const hasDetails = l.details && Object.keys(l.details).length > 0;
+    const detailsBtn = hasDetails
+      ? `<span class="detail-toggle" onclick="toggleDetail(${i})">Voir</span><div class="detail-panel" id="detail-${i}">${_renderDetails(l.details)}</div>`
+      : "—";
+
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--text2)">${date}</td>
+      <td><strong>${l.prenom} ${l.nom}</strong></td>
+      <td>${l.societe || '<span style="color:var(--text2)">—</span>'}</td>
+      <td><a href="mailto:${l.email}" style="color:var(--accent)">${l.email}</a></td>
+      <td>${l.telephone || '—'}</td>
+      <td>${scores}</td>
+      <td style="max-width:300px">${alerts}</td>
+      <td>${detailsBtn}</td>
+    </tr>`;
+  }).join("");
+}
+
+function _renderDetails(d) {
+  let html = "";
+  const section = (title, items, fmt) => {
+    if (!items?.length) return "";
+    return `<div class="detail-section"><strong>${title} (${items.length})</strong>${items.map(fmt).map(t=>`<div class="detail-item">· ${t}</div>`).join("")}</div>`;
+  };
+  html += section("Sans MFA",         d.noMfaUsers,     u => `${u.name} &lt;${u.upn}&gt;`);
+  html += section("MFA faible",        d.weakMfaUsers,   u => `${u.name} &lt;${u.upn}&gt;`);
+  html += section("Inactifs >90j",     d.inactiveUsers,  u => `${u.name} &lt;${u.upn}&gt;`);
+  html += section("Admins globaux",    d.globalAdmins,   u => `${u.name} &lt;${u.upn}&gt;`);
+  html += section("Non conformes",     d.nonCompliant,   d => `${d.name} — ${d.user} (${d.os})`);
+  html += section("Licences gaspillées", d.wastedLicenses, u => `${u.name} &lt;${u.upn}&gt;`);
+  html += section("Règles inbox",      d.inboxRules,     r => `${r.displayName || r.name} &lt;${r.upn}&gt;`);
+  html += section("Apps OAuth risquées", d.riskyOAuthApps, a => `${a.displayName || a.name}`);
+  html += section("Admins avec mailbox", d.adminsWithMailbox, u => `${u.name || u.displayName} &lt;${u.upn || u.userPrincipalName}&gt;`);
+  return html || '<span style="color:var(--text2)">Aucun détail disponible.</span>';
+}
+
+function toggleDetail(i) {
+  const el = document.getElementById("detail-" + i);
+  if (el) el.classList.toggle("open");
+}
+
+function renderPagination(count) {
+  const pg = document.getElementById("pagination");
+  const prev = _currentSkip > 0;
+  const next  = count === PAGE_SIZE;
+  if (!prev && !next) { pg.innerHTML = ""; return; }
+  pg.innerHTML = `
+    ${prev ? `<button class="btn-sm" onclick="loadLeads(${_currentSkip - PAGE_SIZE})">← Précédent</button>` : ""}
+    ${next  ? `<button class="btn-sm" onclick="loadLeads(${_currentSkip + PAGE_SIZE})">Suivant →</button>` : ""}
+  `;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+const saved = sessionStorage.getItem("admin-token");
+if (saved) { _token = saved; showApp(); }
+</script>
+</body>
+</html>
