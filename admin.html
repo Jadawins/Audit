@@ -41,7 +41,7 @@
   .score-bad  { background:#ef444418; color:#ef4444; border:1px solid #ef444430; }
   .score-lbl  { font-size:.65rem; opacity:.8; font-family:var(--sans); }
 
-  /* Alertes compactes */
+  /* Alertes */
   .lead-alerts { margin-top:.75rem; display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
   .alert-count { display:inline-flex; align-items:center; gap:.3rem; padding:.2rem .55rem; border-radius:5px; font-size:.72rem; cursor:pointer; border:none; font-family:var(--sans); }
   .alert-count-red    { background:#ef444418; color:#ef4444; }
@@ -51,20 +51,44 @@
   .alert-item { font-size:.72rem; padding:.25rem 0; border-bottom:1px solid var(--border); color:var(--text2); }
   .alert-item:last-child { border:none; }
 
-  /* Détails */
-  .lead-actions { display:flex; gap:.5rem; align-items:center; }
-  .btn-detail { background:none; border:1px solid var(--border); color:var(--text2); border-radius:6px; padding:.3rem .75rem; font-size:.72rem; cursor:pointer; font-family:var(--sans); }
-  .btn-detail:hover { border-color:var(--accent); color:var(--accent); }
-  .btn-delete { background:none; border:1px solid #ef444430; color:#ef4444; border-radius:6px; padding:.3rem .75rem; font-size:.72rem; cursor:pointer; font-family:var(--sans); }
+  /* Actions */
+  .lead-actions { display:flex; gap:.4rem; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .btn-theme { background:none; border:1px solid var(--border); color:var(--text2); border-radius:6px; padding:.3rem .7rem; font-size:.72rem; cursor:pointer; font-family:var(--sans); white-space:nowrap; }
+  .btn-theme:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-theme.entra  { border-color:#3b82f630; color:var(--acc2); }
+  .btn-theme.entra:hover  { background:#3b82f618; }
+  .btn-theme.intune { border-color:#22c55e30; color:var(--green); }
+  .btn-theme.intune:hover { background:#22c55e18; }
+  .btn-theme.o365   { border-color:#f59e0b30; color:var(--orange); }
+  .btn-theme.o365:hover   { background:#f59e0b18; }
+  .btn-delete { background:none; border:1px solid #ef444430; color:#ef4444; border-radius:6px; padding:.3rem .7rem; font-size:.72rem; cursor:pointer; font-family:var(--sans); }
   .btn-delete:hover { background:#ef444418; }
-  .detail-panel { display:none; margin-top:.75rem; padding-top:.75rem; border-top:1px solid var(--border); }
-  .detail-panel.open { display:block; }
-  .detail-section { margin-bottom:.75rem; }
-  .detail-section-title { font-size:.7rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.35rem; }
-  .detail-item { font-size:.75rem; padding:.15rem 0; color:var(--text); }
-  .detail-item::before { content:"·"; margin-right:.4rem; color:var(--text2); }
 
-  .commentaire-box { font-size:.75rem; color:var(--text2); font-style:italic; margin-top:.5rem; padding:.5rem .75rem; background:var(--bg2); border-radius:6px; border-left:2px solid var(--border); }
+  .commentaire-box { font-size:.75rem; color:var(--text2); font-style:italic; margin-top:.75rem; padding:.5rem .75rem; background:var(--bg2); border-radius:6px; border-left:2px solid var(--border); }
+
+  /* Modale thème */
+  .theme-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; overflow-y:auto; padding:2rem 1rem; }
+  .theme-overlay.active { display:block; }
+  .theme-modal { background:var(--card); border:1px solid var(--border); border-radius:14px; max-width:900px; margin:0 auto; overflow:hidden; }
+  .theme-modal-head { display:flex; align-items:center; justify-content:space-between; padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); }
+  .theme-modal-title { font-size:1rem; font-weight:600; }
+  .theme-modal-sub { font-size:.75rem; color:var(--text2); margin-top:.15rem; }
+  .theme-modal-body { padding:1.5rem; }
+  .theme-section { margin-bottom:1.75rem; }
+  .theme-section-title { font-size:.7rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.75rem; padding-bottom:.4rem; border-bottom:1px solid var(--border); }
+  .theme-empty { color:var(--text2); font-size:.78rem; padding:.5rem 0; }
+
+  /* Tables dans la modale */
+  .dt { width:100%; border-collapse:collapse; font-size:.78rem; }
+  .dt th { text-align:left; padding:.5rem .75rem; border-bottom:1px solid var(--border); color:var(--text2); font-weight:500; white-space:nowrap; }
+  .dt td { padding:.5rem .75rem; border-bottom:1px solid var(--border); }
+  .dt tr:last-child td { border:none; }
+  .dt tr:hover td { background:var(--bg2); }
+  .tag-sm { display:inline-block; padding:.1rem .4rem; border-radius:3px; font-size:.65rem; }
+  .tag-red    { background:#ef444418; color:#ef4444; }
+  .tag-orange { background:#f59e0b18; color:#f59e0b; }
+  .tag-green  { background:#22c55e18; color:#22c55e; }
+  .tag-gray   { background:var(--bg2); color:var(--text2); }
 
   .err { color:var(--red); font-size:.8rem; margin-top:.5rem; }
   .pagination { display:flex; gap:.5rem; margin-top:1.5rem; justify-content:center; }
@@ -89,16 +113,27 @@
     <h1>AUDIT <span style="color:var(--accent)">MS</span> · Admin</h1>
     <button class="btn-sm" onclick="adminLogout()">Déconnexion</button>
   </div>
-
   <div class="admin-stats" id="admin-stats"></div>
-
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
     <span style="font-weight:500;font-size:.9rem" id="leads-title">Leads</span>
     <button class="btn-sm" onclick="loadLeads(0)">↺ Actualiser</button>
   </div>
-
   <div id="leads-list"></div>
   <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- MODALE THÈME -->
+<div class="theme-overlay" id="theme-overlay" onclick="if(event.target===this)closeTheme()">
+  <div class="theme-modal">
+    <div class="theme-modal-head">
+      <div>
+        <div class="theme-modal-title" id="tm-title"></div>
+        <div class="theme-modal-sub" id="tm-sub"></div>
+      </div>
+      <button class="btn-sm" onclick="closeTheme()">✕ Fermer</button>
+    </div>
+    <div class="theme-modal-body" id="tm-body"></div>
+  </div>
 </div>
 
 <script>
@@ -124,14 +159,11 @@ async function adminLogin() {
     showApp();
   } catch { err.textContent = "Impossible de se connecter."; }
 }
-
 function adminLogout() {
-  _token = null;
-  sessionStorage.removeItem("admin-token");
+  _token = null; sessionStorage.removeItem("admin-token");
   document.getElementById("admin-login").style.display = "flex";
   document.getElementById("admin-app").style.display   = "none";
 }
-
 function showApp() {
   document.getElementById("admin-login").style.display = "none";
   document.getElementById("admin-app").style.display   = "block";
@@ -178,83 +210,143 @@ function _scoreBadge(label, v) {
 function renderLeads(leads) {
   const list = document.getElementById("leads-list");
   document.getElementById("leads-title").textContent = "Leads (" + leads.length + ")";
-  if (!leads.length) {
-    list.innerHTML = '<div class="empty-state">Aucun lead pour le moment.</div>';
-    return;
-  }
+  if (!leads.length) { list.innerHTML = '<div class="empty-state">Aucun lead pour le moment.</div>'; return; }
   list.innerHTML = leads.map((l, i) => {
-    const date = new Date(l.createdAt).toLocaleString("fr-FR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
-    const scores = l.scores ? Object.entries(l.scores).map(([k,v]) => _scoreBadge(k,v)).join("") : "";
+    const date    = new Date(l.createdAt).toLocaleString("fr-FR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+    const scores  = l.scores ? Object.entries(l.scores).map(([k,v]) => _scoreBadge(k,v)).join("") : "";
     const redN    = (l.alerts||[]).filter(a=>a.lvl==="red").length;
     const orangeN = (l.alerts||[]).filter(a=>a.lvl==="orange").length;
     const alertBtns = [
-      redN    ? `<button class="alert-count alert-count-red"    onclick="toggleAlerts('al-${i}')"    >🔴 ${redN} critique${redN>1?"s":""}</button>` : "",
+      redN    ? `<button class="alert-count alert-count-red"    onclick="toggleAlerts('al-${i}')">🔴 ${redN} critique${redN>1?"s":""}</button>` : "",
       orangeN ? `<button class="alert-count alert-count-orange" onclick="toggleAlerts('al-${i}')">🟡 ${orangeN} avertissement${orangeN>1?"s":""}</button>` : "",
       (!redN && !orangeN) ? `<span style="font-size:.72rem;color:var(--text2)">Aucune alerte</span>` : ""
     ].join("");
-    const alertList = (l.alerts||[]).map(a =>
-      `<div class="alert-item">${a.lvl==="red"?"🔴":"🟡"} ${a.msg}</div>`
-    ).join("");
-
-    const hasDetails = l.details && Object.values(l.details).some(v => Array.isArray(v) && v.length > 0);
+    const alertList = (l.alerts||[]).map(a => `<div class="alert-item">${a.lvl==="red"?"🔴":"🟡"} ${a.msg}</div>`).join("");
+    const d = l.details || {};
+    const hasEntra  = d.noMfaUsers?.length || d.weakMfaUsers?.length || d.inactiveUsers?.length || d.globalAdmins?.length;
+    const hasIntune = d.nonCompliant?.length;
+    const hasO365   = d.wastedLicenses?.length || d.inboxRules?.length || d.riskyOAuthApps?.length || d.adminsWithMailbox?.length;
 
     return `<div class="lead-card" id="card-${i}">
       <div class="lead-top">
         <div>
           <div class="lead-name">${l.prenom} ${l.nom}${l.societe ? ` · <span style="font-weight:400;color:var(--text2)">${l.societe}</span>` : ""}</div>
           <div class="lead-meta">
-            <a href="mailto:${l.email}">${l.email}</a>
-            ${l.telephone ? ` · ${l.telephone}` : ""}
-            · <span>${date}</span>
+            <a href="mailto:${l.email}">${l.email}</a>${l.telephone ? ` · ${l.telephone}` : ""} · ${date}
           </div>
         </div>
         <div class="lead-actions">
-          ${hasDetails ? `<button class="btn-detail" onclick="toggleDetail('det-${i}')">Détails</button>` : ""}
-          <button class="btn-delete" onclick="deleteLead('${l._id}', ${i})">Supprimer</button>
+          ${hasEntra  ? `<button class="btn-theme entra"  onclick="openTheme(${i},'entra')">Entra ID</button>` : ""}
+          ${hasIntune ? `<button class="btn-theme intune" onclick="openTheme(${i},'intune')">Intune</button>` : ""}
+          ${hasO365   ? `<button class="btn-theme o365"   onclick="openTheme(${i},'o365')">Microsoft 365</button>` : ""}
+          <button class="btn-delete" onclick="deleteLead('${l._id}',${i})">Supprimer</button>
         </div>
       </div>
-
       ${scores ? `<div class="lead-scores">${scores}</div>` : ""}
-
-      <div class="lead-alerts">
-        ${alertBtns}
-      </div>
+      <div class="lead-alerts">${alertBtns}</div>
       <div class="alert-list" id="al-${i}">${alertList}</div>
-
       ${l.commentaire ? `<div class="commentaire-box">"${l.commentaire}"</div>` : ""}
-
-      ${hasDetails ? `<div class="detail-panel" id="det-${i}">${_renderDetails(l.details)}</div>` : ""}
     </div>`;
   }).join("");
+
+  // Stocker les leads pour la modale
+  window._leads = leads;
 }
 
-function toggleAlerts(id) {
-  document.getElementById(id)?.classList.toggle("open");
+function toggleAlerts(id) { document.getElementById(id)?.classList.toggle("open"); }
+
+// ── Modale thème ──────────────────────────────────────────────────────────────
+function openTheme(i, theme) {
+  const l = window._leads[i];
+  const d = l.details || {};
+  const overlay = document.getElementById("theme-overlay");
+  const contact = `${l.prenom} ${l.nom}${l.societe ? " · " + l.societe : ""}`;
+
+  let title, sub, body = "";
+
+  if (theme === "entra") {
+    const scoreVal = l.scores?.["Entra ID"] ?? l.scores?.["entra"] ?? null;
+    title = "Entra ID";
+    sub   = contact + (scoreVal !== null ? " · Score " + scoreVal + "/100" : "");
+    body += _tableSection("Utilisateurs sans MFA", d.noMfaUsers, [
+      { h:"Nom",   fn: u => u.name },
+      { h:"UPN",   fn: u => `<span style="font-family:var(--mono);font-size:.72rem">${u.upn}</span>` },
+      { h:"Statut",fn: () => `<span class="tag-sm tag-red">Sans MFA</span>` }
+    ]);
+    body += _tableSection("MFA faible (SMS/appel)", d.weakMfaUsers, [
+      { h:"Nom", fn: u => u.name },
+      { h:"UPN", fn: u => `<span style="font-family:var(--mono);font-size:.72rem">${u.upn}</span>` },
+      { h:"Statut", fn: () => `<span class="tag-sm tag-orange">MFA faible</span>` }
+    ]);
+    body += _tableSection("Comptes inactifs >90 jours", d.inactiveUsers, [
+      { h:"Nom", fn: u => u.name },
+      { h:"UPN", fn: u => `<span style="font-family:var(--mono);font-size:.72rem">${u.upn}</span>` }
+    ]);
+    body += _tableSection("Administrateurs globaux", d.globalAdmins, [
+      { h:"Nom", fn: u => u.name },
+      { h:"UPN", fn: u => `<span style="font-family:var(--mono);font-size:.72rem">${u.upn}</span>` }
+    ]);
+  }
+
+  if (theme === "intune") {
+    const scoreVal = l.scores?.["Intune"] ?? l.scores?.["intune"] ?? null;
+    title = "Intune";
+    sub   = contact + (scoreVal !== null ? " · Score " + scoreVal + "/100" : "");
+    body += _tableSection("Appareils non conformes", d.nonCompliant, [
+      { h:"Appareil",fn: x => x.name },
+      { h:"Utilisateur", fn: x => x.user || "—" },
+      { h:"OS",      fn: x => x.os || "—" },
+      { h:"Version", fn: x => x.osVersion || "—" },
+      { h:"Statut",  fn: () => `<span class="tag-sm tag-red">Non conforme</span>` }
+    ]);
+  }
+
+  if (theme === "o365") {
+    const scoreVal = l.scores?.["Microsoft 365"] ?? l.scores?.["o365"] ?? null;
+    title = "Microsoft 365";
+    sub   = contact + (scoreVal !== null ? " · Score " + scoreVal + "/100" : "");
+    body += _tableSection("Licences gaspillées", d.wastedLicenses, [
+      { h:"Nom",    fn: u => u.name },
+      { h:"UPN",    fn: u => `<span style="font-family:var(--mono);font-size:.72rem">${u.upn}</span>` },
+      { h:"Raison", fn: u => `<span class="tag-sm tag-orange">${u.reason||"—"}</span>` }
+    ]);
+    body += _tableSection("Règles inbox suspectes", d.inboxRules, [
+      { h:"Règle",  fn: r => r.name || "—" },
+      { h:"UPN",    fn: r => `<span style="font-family:var(--mono);font-size:.72rem">${r.upn||"—"}</span>` },
+      { h:"Flags",  fn: r => (r.flags||[]).map(f=>`<span class="tag-sm tag-red">${f}</span>`).join(" ") || "—" }
+    ]);
+    body += _tableSection("Applications OAuth risquées", d.riskyOAuthApps, [
+      { h:"Application", fn: a => a.name || "—" },
+      { h:"Éditeur",     fn: a => a.publisher || `<span style="color:var(--text2)">Inconnu</span>` }
+    ]);
+    body += _tableSection("Admins globaux avec boîte mail", d.adminsWithMailbox, [
+      { h:"Nom", fn: u => u.name },
+      { h:"UPN", fn: u => `<span style="font-family:var(--mono);font-size:.72rem">${u.upn}</span>` }
+    ]);
+  }
+
+  document.getElementById("tm-title").textContent = title;
+  document.getElementById("tm-sub").textContent   = sub;
+  document.getElementById("tm-body").innerHTML    = body || '<div class="theme-empty">Aucune donnée.</div>';
+  overlay.classList.add("active");
+  document.body.style.overflow = "hidden";
 }
 
-function toggleDetail(id) {
-  document.getElementById(id)?.classList.toggle("open");
+function closeTheme() {
+  document.getElementById("theme-overlay").classList.remove("active");
+  document.body.style.overflow = "";
 }
 
-function _renderDetails(d) {
-  let html = "";
-  const section = (title, items, fmt) => {
-    if (!items?.length) return "";
-    return `<div class="detail-section">
-      <div class="detail-section-title">${title} (${items.length})</div>
-      ${items.map(x => `<div class="detail-item">${fmt(x)}</div>`).join("")}
-    </div>`;
-  };
-  html += section("Sans MFA",            d.noMfaUsers,       u => `${u.name} &lt;${u.upn}&gt;`);
-  html += section("MFA faible",           d.weakMfaUsers,     u => `${u.name} &lt;${u.upn}&gt;`);
-  html += section("Inactifs >90j",        d.inactiveUsers,    u => `${u.name} &lt;${u.upn}&gt;`);
-  html += section("Admins globaux",       d.globalAdmins,     u => `${u.name} &lt;${u.upn}&gt;`);
-  html += section("Appareils non conformes", d.nonCompliant,  x => `${x.name} — ${x.user} (${x.os})`);
-  html += section("Licences gaspillées",  d.wastedLicenses,   u => `${u.name} &lt;${u.upn}&gt;`);
-  html += section("Règles inbox suspectes", d.inboxRules,     r => `${r.displayName||r.name} &lt;${r.upn}&gt;`);
-  html += section("Apps OAuth risquées",  d.riskyOAuthApps,   a => `${a.displayName||a.name}`);
-  html += section("Admins avec mailbox",  d.adminsWithMailbox, u => `${u.name||u.displayName} &lt;${u.upn||u.userPrincipalName}&gt;`);
-  return html || '<div style="color:var(--text2);font-size:.75rem">Aucun détail disponible.</div>';
+function _tableSection(title, items, cols) {
+  if (!items?.length) return "";
+  const thead = cols.map(c => `<th>${c.h}</th>`).join("");
+  const tbody = items.map(item =>
+    `<tr>${cols.map(c => `<td>${c.fn(item)}</td>`).join("")}</tr>`
+  ).join("");
+  return `<div class="theme-section">
+    <div class="theme-section-title">${title} <span style="font-weight:400;opacity:.6">(${items.length})</span></div>
+    <table class="dt"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>
+  </div>`;
 }
 
 // ── Suppression ───────────────────────────────────────────────────────────────
@@ -262,12 +354,11 @@ async function deleteLead(id, i) {
   if (!confirm("Supprimer ce lead ?")) return;
   try {
     const r = await fetch(API + "/admin/leads/" + id, {
-      method: "DELETE", headers: { Authorization: "Bearer " + _token }
+      method:"DELETE", headers:{ Authorization:"Bearer " + _token }
     });
     if (r.status === 401) { adminLogout(); return; }
     if (!r.ok) { alert("Erreur lors de la suppression."); return; }
-    const card = document.getElementById("card-" + i);
-    if (card) card.remove();
+    document.getElementById("card-" + i)?.remove();
   } catch { alert("Impossible de supprimer."); }
 }
 
@@ -283,6 +374,7 @@ function renderPagination(count) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeTheme(); });
 const saved = sessionStorage.getItem("admin-token");
 if (saved) { _token = saved; showApp(); }
 </script>
