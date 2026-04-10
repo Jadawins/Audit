@@ -9,6 +9,7 @@ const express    = require("express");
 const nodemailer = require("nodemailer");
 const path       = require("path");
 const https      = require("https");
+const dns        = require("dns").promises;
 const { execSync } = require("child_process");
 const rateLimit  = require("express-rate-limit");
 const { LeadSchema, InboxRulesSchema } = require("./validation");
@@ -198,12 +199,25 @@ app.post("/inbox-rules", graphLimiter, async (req, res) => {
   }
 });
 
+// ── Vérification MX ───────────────────────────────────────────────────────────
+async function _checkMX(email) {
+  try {
+    const domain = email.split("@")[1];
+    const records = await dns.resolveMx(domain);
+    return records && records.length > 0;
+  } catch { return false; }
+}
+
 // ── POST /api/lead ─────────────────────────────────────────────────────────────
 app.post("/lead", leadLimiter, async (req, res) => {
   try {
     const parsed = LeadSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Données invalides", details: parsed.error.flatten() });
     const { prenom, nom, societe, email, telephone, commentaire, scores, alerts, details } = parsed.data;
+
+    // Vérification MX
+    const mxValid = await _checkMX(email);
+    if (!mxValid) return res.status(422).json({ error: "Adresse email invalide ou domaine inexistant." });
 
     // 1. Sauvegarde en base MongoDB
     const lead = {

@@ -461,6 +461,13 @@ async function submitDashLead() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prenom, nom, societe, email, telephone, commentaire, scores, alerts: _allAlerts })
     });
+    if (r.status === 422) {
+      const body = await r.json();
+      errEl.textContent = body.error || "Adresse email invalide.";
+      errEl.style.display = "block";
+      if (btn) { btn.disabled = false; btn.textContent = "Envoyer ma demande"; }
+      return;
+    }
     if (!r.ok) throw new Error("Erreur " + r.status);
     localStorage.setItem("lead-submitted", new Date().toISOString().slice(0, 10));
     document.getElementById("dash-modal-form").style.display    = "none";
