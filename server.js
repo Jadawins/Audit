@@ -308,7 +308,7 @@ app.post("/api/deploy", (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
   try {
-    execSync(`cd ${APP_DIR} && git pull origin main && npm install --omit=dev && node scripts/inject-hashes.js 2>&1`, { timeout: 60000 });
+    execSync(`cd ${APP_DIR} && git pull origin main && npm install --omit=dev && node scripts/inject-hashes.js && pm2 reload all 2>&1`, { timeout: 60000 });
     res.json({ success: true, message: "Deployed" });
   } catch (e) {
     res.status(500).json({ error: e.message });
