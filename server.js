@@ -14,7 +14,7 @@ const { execSync } = require("child_process");
 const rateLimit  = require("express-rate-limit");
 const { LeadSchema, InboxRulesSchema } = require("./validation");
 const logger     = require("./logger");
-const { saveLead, getLeads } = require("./db");
+const { saveLead, getLeads, deleteLead } = require("./db");
 const metrics    = require("./metrics");
 
 const app  = express();
@@ -363,6 +363,16 @@ app.get("/admin/leads", _adminAuth, async (req, res) => {
     const skip  = parseInt(req.query.skip) || 0;
     const leads = await getLeads({ limit, skip });
     res.json({ leads });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete("/admin/leads/:id", _adminAuth, async (req, res) => {
+  try {
+    const ok = await deleteLead(req.params.id);
+    if (!ok) return res.status(404).json({ error: "Lead introuvable." });
+    res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

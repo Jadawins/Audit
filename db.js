@@ -1,5 +1,5 @@
 "use strict";
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const logger = require("./logger");
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -44,4 +44,11 @@ async function getLeads({ limit = 50, skip = 0 } = {}) {
     .toArray();
 }
 
-module.exports = { connect, saveLead, getLeads };
+async function deleteLead(id) {
+  const database = await connect();
+  if (!database) return false;
+  const result = await database.collection("leads").deleteOne({ _id: new ObjectId(id) });
+  return result.deletedCount === 1;
+}
+
+module.exports = { connect, saveLead, getLeads, deleteLead };
