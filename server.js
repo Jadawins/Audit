@@ -308,12 +308,15 @@ app.post("/deploy", (req, res) => {
   if (!DEPLOY_SECRET || authHeader !== "Bearer " + DEPLOY_SECRET) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  try {
-    execSync(`cd ${APP_DIR} && git pull origin main && npm install --omit=dev && node scripts/inject-hashes.js && pm2 reload all 2>&1`, { timeout: 60000 });
-    res.json({ success: true, message: "Deployed" });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  res.json({ success: true, message: "Deploy triggered" });
+  setTimeout(() => {
+    try {
+      execSync(`cd ${APP_DIR} && git pull origin main && npm install --omit=dev && node scripts/inject-hashes.js && pm2 reload all 2>&1`, { timeout: 60000 });
+      logger.info("Deploy terminé avec succès");
+    } catch (e) {
+      logger.error({ err: e.message }, "Deploy échoué");
+    }
+  }, 100);
 });
 
 // ── 404 ────────────────────────────────────────────────────────────────────────
