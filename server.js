@@ -4,7 +4,7 @@
    ========================================================= */
 
 "use strict";
-require("dotenv").config({ path: __dirname + "/.env" });
+require("dotenv").config({ path: __dirname + "/../shared/.env" });
 const express    = require("express");
 const nodemailer = require("nodemailer");
 const path       = require("path");
