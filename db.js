@@ -3,7 +3,7 @@ const { MongoClient } = require("mongodb");
 const logger = require("./logger");
 
 const MONGODB_URI = process.env.MONGODB_URI;
-const DB_NAME     = "auditms";
+const DB_NAME     = "audit";
 
 let client;
 let db;
