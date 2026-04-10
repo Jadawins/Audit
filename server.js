@@ -150,7 +150,7 @@ app.get("/metrics", (req, res) => {
 });
 
 // ── POST /api/inbox-rules ──────────────────────────────────────────────────────
-app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
+app.post("/inbox-rules", graphLimiter, async (req, res) => {
   try {
     if (!CLIENT_SECRET) return res.status(503).json({ error: "Client secret non configuré" });
 
@@ -199,7 +199,7 @@ app.post("/api/inbox-rules", graphLimiter, async (req, res) => {
 });
 
 // ── POST /api/lead ─────────────────────────────────────────────────────────────
-app.post("/api/lead", leadLimiter, async (req, res) => {
+app.post("/lead", leadLimiter, async (req, res) => {
   try {
     const parsed = LeadSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "Données invalides", details: parsed.error.flatten() });
@@ -303,7 +303,7 @@ app.post("/api/lead", leadLimiter, async (req, res) => {
 });
 
 // ── POST /api/deploy — webhook déploiement ────────────────────────────────────
-app.post("/api/deploy", (req, res) => {
+app.post("/deploy", (req, res) => {
   const authHeader = req.headers.authorization || "";
   if (!DEPLOY_SECRET || authHeader !== "Bearer " + DEPLOY_SECRET) {
     return res.status(401).json({ error: "Unauthorized" });
