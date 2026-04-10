@@ -453,7 +453,22 @@ async function submitDashLead() {
     errEl.textContent = "Adresse email invalide."; errEl.style.display = "block"; return;
   }
   errEl.style.display = "none";
-  if (btn) { btn.disabled = true; btn.textContent = "Envoi en cours..."; }
+  if (btn) { btn.disabled = true; btn.textContent = "Vérification..."; }
+
+  // Vérifier que l'email correspond à un compte du tenant
+  try {
+    const u = await gGet("/users/" + encodeURIComponent(email) + "?$select=id");
+    if (!u || !u.id) {
+      errEl.textContent = "Cette adresse ne correspond à aucun compte sur votre tenant.";
+      errEl.style.display = "block";
+      if (btn) { btn.disabled = false; btn.textContent = "Envoyer ma demande"; }
+      return;
+    }
+  } catch {
+    // En cas d'erreur Graph on laisse passer — pas question de bloquer
+  }
+
+  if (btn) btn.textContent = "Envoi en cours...";
   const scores = {};
   PAGES.forEach(p => { if (_scores[p.key] !== null) scores[p.label] = _scores[p.key]; });
   try {
