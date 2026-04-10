@@ -457,15 +457,20 @@ async function submitDashLead() {
 
   // Vérifier que l'email correspond à un compte du tenant
   try {
-    const u = await gGet("/users/" + encodeURIComponent(email) + "?$select=id");
-    if (!u || !u.id) {
+    const token = await graphGetToken();
+    const r404 = await fetch(
+      "https://graph.microsoft.com/v1.0/users/" + encodeURIComponent(email) + "?$select=id",
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    if (r404.status === 404) {
       errEl.textContent = "Cette adresse ne correspond à aucun compte sur votre tenant.";
       errEl.style.display = "block";
       if (btn) { btn.disabled = false; btn.textContent = "Envoyer ma demande"; }
       return;
     }
+    // Autre erreur (403, réseau...) → on laisse passer
   } catch {
-    // En cas d'erreur Graph on laisse passer — pas question de bloquer
+    // Erreur réseau → on laisse passer
   }
 
   if (btn) btn.textContent = "Envoi en cours...";
