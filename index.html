@@ -476,10 +476,27 @@ async function submitDashLead() {
   if (btn) btn.textContent = "Envoi en cours...";
   const scores = {};
   PAGES.forEach(p => { if (_scores[p.key] !== null) scores[p.label] = _scores[p.key]; });
+
+  // Construire les détails techniques depuis les données d'audit
+  const e = _analysisData.entra  || {};
+  const t = _analysisData.intune || {};
+  const o = _analysisData.o365   || {};
+  const details = {
+    noMfaUsers:       (e.noMfaUsers    ||[]).map(u=>({name:u.displayName,upn:u.userPrincipalName})),
+    weakMfaUsers:     (e.weakMfaUsers  ||[]).map(u=>({name:u.displayName,upn:u.userPrincipalName})),
+    inactiveUsers:    (e.inactiveUsers ||[]).map(u=>({name:u.displayName,upn:u.userPrincipalName})),
+    globalAdmins:     (e.globalAdmins  ||[]).map(u=>({name:u.displayName,upn:u.userPrincipalName})),
+    nonCompliant:     (t.nonCompliant  ||[]).map(d=>({name:d.deviceName,user:d.userDisplayName,os:d.operatingSystem,osVersion:d.osVersion})),
+    wastedLicenses:   (o.wastedLicenses||[]).map(u=>({name:u.displayName,upn:u.userPrincipalName,reason:u.reason})),
+    inboxRules:       (o.inboxRules    ||[]).map(r=>({name:r.ruleName,upn:r.upn,flags:r.flags})),
+    riskyOAuthApps:   (o.riskyOAuthApps||[]).map(a=>({name:a.displayName,publisher:a.publisherName})),
+    adminsWithMailbox:(o.adminsWithMailbox||[]).map(u=>({name:u.displayName,upn:u.userPrincipalName}))
+  };
+
   try {
     const r = await fetch("https://auditms.fr/api/lead", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prenom, nom, societe, email, telephone, commentaire, scores, alerts: _allAlerts })
+      body: JSON.stringify({ prenom, nom, societe, email, telephone, commentaire, scores, alerts: _allAlerts, details })
     });
     if (r.status === 422) {
       const body = await r.json();
